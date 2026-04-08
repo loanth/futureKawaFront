@@ -6,6 +6,7 @@ import { api } from '../services/api';
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('admin@futurekawa.com');
   const [password, setPassword] = useState('password123');
+  const [selectedCountry, setSelectedCountry] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -13,12 +14,32 @@ export const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    if (!selectedCountry) {
+      setError('Veuillez sélectionner un pays ou la supervision');
+      return;
+    }
+    
     setIsLoading(true);
     try {
       // 🔌 APPEL API : POST /api/auth/login — Authentification utilisateur (email + mot de passe), retourne un token JWT et les infos utilisateur
       const response = await api.login(email, password);
-      login(response.token, response.user);
-      navigate('/');
+      login(response.token, response.user, selectedCountry);
+      
+      // Mapping des pays vers leurs IDs
+      const countryIds: { [key: string]: number } = {
+        'Brésil': 1,
+        'Équateur': 2,
+        'Colombie': 3
+      };
+      
+      // Rediriger selon le choix
+      if (selectedCountry === 'Supervision') {
+        navigate('/');
+      } else {
+        const countryId = countryIds[selectedCountry];
+        navigate(`/pays/${countryId}`);
+      }
     } catch (err: any) {
       setError(err.message || 'Erreur de connexion');
     } finally {
@@ -94,6 +115,27 @@ export const Login: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent-primary focus:border-accent-primary sm:text-sm" />
                 
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-coffee-dark mb-3">
+                Sélectionnez votre périmètre d'accès
+              </label>
+              <div className="space-y-2">
+                {['Brésil', 'Équateur', 'Colombie', 'Supervision'].map((country) => (
+                  <label key={country} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
+                    <input
+                      type="radio"
+                      name="country"
+                      value={country}
+                      checked={selectedCountry === country}
+                      onChange={(e) => setSelectedCountry(e.target.value)}
+                      className="w-4 h-4 text-accent-primary border-gray-300 focus:ring-accent-primary"
+                    />
+                    <span className="text-sm text-coffee-dark font-medium">{country}</span>
+                  </label>
+                ))}
               </div>
             </div>
 

@@ -17,7 +17,7 @@ interface SidebarProps {
   setIsOpen: (isOpen: boolean) => void;
 }
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
-  const { logout, user } = useAuth();
+  const { logout, user, selectedCountry } = useAuth();
   const navigate = useNavigate();
   const [activeAlertsCount, setActiveAlertsCount] = useState(0);
   useEffect(() => {
@@ -39,38 +39,69 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     logout();
     navigate('/login');
   };
+
+  // Fonction helper pour convertir le nom du pays en ID
+  const getCountryId = (countryName: string): number => {
+    const countryIds: { [key: string]: number } = {
+      'Brésil': 1,
+      'Équateur': 2,
+      'Colombie': 3
+    };
+    return countryIds[countryName] || 0;
+  };
+
   const navItems = [
-  {
-    path: '/',
-    label: 'Dashboard',
-    icon: Home
-  },
-  {
-    path: '/pays/1',
-    label: 'Brésil',
-    icon: MapPin
-  },
-  {
-    path: '/pays/2',
-    label: 'Équateur',
-    icon: MapPin
-  },
-  {
-    path: '/pays/3',
-    label: 'Colombie',
-    icon: MapPin
-  },
+  // Dashboard et Paramètres seulement en mode supervision
+  ...(selectedCountry === 'Supervision' ? [
+    {
+      path: '/',
+      label: 'Dashboard',
+      icon: Home
+    }
+  ] : []),
+  
+  // Pays sélectionné ou tous les pays en supervision
+  ...(selectedCountry === 'Supervision' ? [
+    {
+      path: '/pays/1',
+      label: 'Brésil',
+      icon: MapPin
+    },
+    {
+      path: '/pays/2',
+      label: 'Équateur',
+      icon: MapPin
+    },
+    {
+      path: '/pays/3',
+      label: 'Colombie',
+      icon: MapPin
+    }
+  ] : selectedCountry && selectedCountry !== 'Supervision' ? [
+    {
+      path: `/pays/${getCountryId(selectedCountry)}`,
+      label: selectedCountry,
+      icon: MapPin
+    }
+  ] : []),
+  
+  // Alertes toujours visibles
   {
     path: '/alertes',
     label: 'Alertes',
     icon: Bell,
     badge: activeAlertsCount
   },
-  {
-    path: '/parametres',
-    label: 'Paramètres',
-    icon: Settings
-  }];
+  
+  // Paramètres seulement en supervision
+  ...(selectedCountry === 'Supervision' ? [
+    {
+      path: '/parametres',
+      label: 'Paramètres',
+      icon: Settings
+    }
+  ] : [])
+];
 
   return (
     <>
