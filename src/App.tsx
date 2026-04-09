@@ -11,6 +11,8 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { CountryView } from './pages/CountryView';
 import { ExploitationView } from './pages/ExploitationView';
+import { WarehouseView } from './pages/WarehouseView';
+import { LotDetail } from './pages/LotDetail';
 
 export function App() {
   return (
@@ -24,6 +26,8 @@ export function App() {
           <Route
               path="exploitation/:idExploitation"
               element={<ExploitationView />} />
+              <Route path="entrepot/:idEntrepot" element={<WarehouseView />} />
+              <Route path="lot/:idLotGrains" element={<LotDetail />} />
         </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

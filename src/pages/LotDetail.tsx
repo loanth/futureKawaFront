@@ -1,0 +1,248 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  Loader2,
+  Package,
+  Calendar,
+  AlertTriangle,
+  CheckCircle } from
+'lucide-react';
+import { api } from '../services/api';
+import { Breadcrumb } from '../components/Breadcrumb';
+import { StatusBadge } from '../components/StatusBadge';
+import { TemperatureChart } from '../components/TemperatureChart';
+import { HumidityChart } from '../components/HumidityChart';
+export const LotDetail: React.FC = () => {
+  const { idLotGrains } = useParams<{
+    idLotGrains: string;
+  }>();
+  const navigate = useNavigate();
+  const [lot, setLot] = useState<any>(null);
+  const [mesures, setMesures] = useState<any[]>([]);
+  const [alertes, setAlertes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isMarkingOut, setIsMarkingOut] = useState(false);
+  useEffect(() => {
+    if (!idLotGrains) return;
+    const fetchData = async () => {
+      try {
+        // 🔌 APPEL API : GET /api/lots/:id — Récupère les infos du lot (datSto, statut, datSortie, entrepôt, exploitation, pays)
+        const lotData = await api.getLot(idLotGrains);
+        if (lotData) {
+          const [mesData, alertesData] = await Promise.all([
+          // 🔌 APPEL API : GET /api/entrepot/:idEntrepot/mesures?from=datSto — Mesures température/humidité depuis la date de stockage du lot
+          api.getLotMeasures(lotData.idEntrepot, lotData.datSto),
+          // 🔌 APPEL API : GET /api/lots/:id/alertes — Historique des alertes liées à ce lot
+          api.getLotAlerts(idLotGrains)]
+          );
+          setLot(lotData);
+          setMesures(mesData);
+          setAlertes(alertesData);
+        }
+      } catch (error) {
+        console.error('Error fetching lot data', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [idLotGrains]);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
+      </div>);
+
+  }
+  if (!lot) return <div>Lot non trouvé</div>;
+  const ageDays = Math.floor(
+    (new Date().getTime() - new Date(lot.datSto).getTime()) / (
+    1000 * 60 * 60 * 24)
+  );
+  const pays = lot.pays;
+  const chartDataTemp = mesures.map((m) => ({
+    date: m.datMesure,
+    value: m.temperature
+  }));
+  const chartDataHum = mesures.map((m) => ({
+    date: m.datMesure,
+    value: m.humidite
+  }));
+  const handleMarkOut = async () => {
+    setIsMarkingOut(true);
+    // 🔌 APPEL API : PUT /api/lots/:id — Mettre à jour le lot : renseigner datSortie et changer le statut
+    // TODO : Remplacer le setTimeout ci-dessous par un vrai appel API
+    setTimeout(() => {
+      setLot({
+        ...lot,
+        datSortie: new Date().toISOString()
+      });
+      setIsMarkingOut(false);
+    }, 800);
+  };
+  return (
+    <div className="space-y-6">
+      <Breadcrumb
+        items={[
+        {
+          label: pays.nom,
+          path: `/pays/${pays.idPays}`
+        },
+        {
+          label: lot.exploitation.nom,
+          path: `/exploitation/${lot.exploitation.idExploitation}`
+        },
+        {
+          label: lot.entrepot.nom,
+          path: `/entrepot/${lot.entrepot.idEntrepot}`
+        },
+        {
+          label: `Lot #${lot.idLotGrains}`
+        }]
+        } />
+      
+
+      {/* Alerts for age */}
+      {ageDays > 365 && !lot.datSortie &&
+      <div className="bg-status-danger text-white p-4 rounded-lg flex items-center shadow-md">
+          <AlertTriangle className="mr-3" />
+          <div>
+            <h3 className="font-bold">LOT PÉRIMÉ</h3>
+            <p className="text-sm opacity-90">
+              Ce lot est stocké depuis plus de 365 jours ({ageDays} jours).
+            </p>
+          </div>
+        </div>
+      }
+      {ageDays > 300 && ageDays <= 365 && !lot.datSortie &&
+      <div className="bg-status-warning text-white p-4 rounded-lg flex items-center shadow-md">
+          <AlertTriangle className="mr-3" />
+          <div>
+            <h3 className="font-bold">Lot proche de la péremption</h3>
+            <p className="text-sm opacity-90">
+              Ce lot est stocké depuis {ageDays} jours. Il sera périmé dans{' '}
+              {365 - ageDays} jours.
+            </p>
+          </div>
+        </div>
+      }
+
+      {/* Lot Header */}
+      <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center">
+          <div className="bg-cream-bg p-4 rounded-xl mr-4">
+            <Package className="w-8 h-8 text-coffee-medium" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-coffee-dark">
+              Lot {lot.idLotGrains}
+            </h1>
+            <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
+              <span className="flex items-center">
+                <Calendar className="w-4 h-4 mr-1" /> Stocké le{' '}
+                {new Date(lot.datSto).toLocaleDateString('fr-FR')}
+              </span>
+              <span>•</span>
+              <span>{ageDays} jours de stockage</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-end space-y-3">
+          <StatusBadge status={lot.statut} className="text-sm px-3 py-1" />
+
+          {!lot.datSortie ?
+          <button
+            onClick={handleMarkOut}
+            disabled={isMarkingOut}
+            className="flex items-center px-4 py-2 bg-coffee-dark hover:bg-coffee-medium text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-70">
+            
+              {isMarkingOut ?
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> :
+
+            <CheckCircle className="w-4 h-4 mr-2" />
+            }
+              Marquer comme sorti
+            </button> :
+
+          <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-md border border-gray-200">
+              Sorti le {new Date(lot.datSortie).toLocaleDateString('fr-FR')}
+            </div>
+          }
+        </div>
+      </div>
+
+      {/* Charts */}
+      <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6">
+        <h2 className="text-lg font-bold text-coffee-dark mb-6">
+          Historique des conditions de stockage
+        </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TemperatureChart
+            data={chartDataTemp}
+            minThreshold={pays.temperatureMin}
+            maxThreshold={pays.temperatureMax} />
+          
+          <HumidityChart
+            data={chartDataHum}
+            minThreshold={pays.humiditeMin}
+            maxThreshold={pays.humiditeMax} />
+          
+        </div>
+      </div>
+
+      {/* Alerts History */}
+      <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-coffee-dark">
+            Alertes liées à ce lot
+          </h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-cream-bg/50 text-coffee-medium text-sm border-b border-gray-100">
+                <th className="p-4 font-medium">Date</th>
+                <th className="p-4 font-medium">Type d'alerte</th>
+                <th className="p-4 font-medium">Valeur mesurée</th>
+                <th className="p-4 font-medium">Statut</th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {alertes.map((alerte) =>
+              <tr key={alerte.idAlerte} className="border-b border-gray-50">
+                  <td className="p-4 text-gray-600">
+                    {new Date(alerte.dateAlerte).toLocaleString('fr-FR')}
+                  </td>
+                  <td className="p-4 font-medium text-coffee-dark">
+                    {alerte.type}
+                  </td>
+                  <td className="p-4 text-gray-600">
+                    {alerte.valeurMesuree ?
+                  <span className="text-status-danger font-medium">
+                        {alerte.valeurMesuree}{' '}
+                        {alerte.type.includes('Température') ? '°C' : '%'}
+                      </span> :
+
+                  '-'
+                  }
+                  </td>
+                  <td className="p-4">
+                    <StatusBadge status={alerte.statut} />
+                  </td>
+                </tr>
+              )}
+              {alertes.length === 0 &&
+              <tr>
+                  <td colSpan={4} className="p-8 text-center text-gray-500">
+                    Aucune alerte enregistrée pour ce lot.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>);
+
+};
