@@ -10,6 +10,7 @@ import { Login } from './pages/Login';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { CountryView } from './pages/CountryView';
+import { ExploitationView } from './pages/ExploitationView';
 
 export function App() {
   return (
@@ -20,7 +21,9 @@ export function App() {
         <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
            <Route path="pays/:idPays" element={<CountryView />} />
-          
+          <Route
+              path="exploitation/:idExploitation"
+              element={<ExploitationView />} />
         </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
