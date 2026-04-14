@@ -12,11 +12,15 @@ import { api } from '../services/api';
 import { MetricCard } from '../components/MetricCard';
 import { AlertBanner } from '../components/AlertBanner';
 import { StatusBadge } from '../components/StatusBadge';
+import { useTranslation } from 'react-i18next';
+
 export const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const [data, setData] = useState<any>(null);
   const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -36,29 +40,31 @@ export const Dashboard: React.FC = () => {
     };
     fetchData();
   }, []);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
       </div>);
-
   }
+
   // Determine global status
   let globalStatus: 'nominal' | 'warning' | 'critical' = 'nominal';
   let globalMessage =
-  'Tous les systèmes sont opérationnels. Conditions de stockage optimales.';
+  t('dashboard.allSystemsOperational');
   if (data?.metrics.lotsPerimes > 0) {
     globalStatus = 'critical';
-    globalMessage = `Alerte Critique : ${data.metrics.lotsPerimes} lot(s) périmé(s) détecté(s). Action immédiate requise.`;
+    globalMessage = t('dashboard.criticalAlert', { count: data.metrics.lotsPerimes });
   } else if (data?.metrics.lotsAlerte > 0) {
     globalStatus = 'warning';
-    globalMessage = `Attention : ${data.metrics.lotsAlerte} lot(s) en alerte de conditions de stockage.`;
+    globalMessage = t('dashboard.warningAlert', { count: data.metrics.lotsAlerte });
   }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-coffee-dark">
-          Supervision Globale
+          {t('dashboard.globalSupervision')}
         </h1>
       </div>
 
@@ -66,25 +72,25 @@ export const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Lots Stockés"
+          title={t('dashboard.storedLots')}
           value={data?.metrics.lotsStockes || 0}
           icon={Package}
           colorClass="text-accent-primary" />
         
         <MetricCard
-          title="Lots en Alerte"
+          title={t('dashboard.lotsInAlert')}
           value={data?.metrics.lotsAlerte || 0}
           icon={AlertTriangle}
           colorClass="text-status-warning" />
         
         <MetricCard
-          title="Lots Périmés"
+          title={t('dashboard.expiredLots')}
           value={data?.metrics.lotsPerimes || 0}
           icon={Clock}
           colorClass="text-status-danger" />
         
         <MetricCard
-          title="Entrepôts Actifs"
+          title={t('dashboard.activeWarehouses')}
           value={data?.metrics.entrepotsActifs || 0}
           icon={Building2}
           colorClass="text-coffee-medium" />
@@ -96,19 +102,19 @@ export const Dashboard: React.FC = () => {
         <div className="lg:col-span-2 bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-bold text-coffee-dark">
-              Répartition par Pays
+              {t('dashboard.distributionByCountry')}
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-cream-bg/50 text-coffee-medium text-sm border-b border-gray-100">
-                  <th className="p-4 font-medium">Pays</th>
-                  <th className="p-4 font-medium">Exploitations</th>
-                  <th className="p-4 font-medium">Entrepôts</th>
-                  <th className="p-4 font-medium">Lots</th>
-                  <th className="p-4 font-medium">En Alerte</th>
-                  <th className="p-4 font-medium">Dernière Mesure</th>
+                  <th className="p-4 font-medium">{t('countries.countryName')}</th>
+                  <th className="p-4 font-medium">{t('countries.exploitationCount')}</th>
+                  <th className="p-4 font-medium">{t('countries.warehouseCount')}</th>
+                  <th className="p-4 font-medium">{t('lots.title')}</th>
+                  <th className="p-4 font-medium">{t('dashboard.inAlert')}</th>
+                  <th className="p-4 font-medium">{t('dashboard.lastMeasurement')}</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
@@ -154,13 +160,13 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h2 className="text-lg font-bold text-coffee-dark">
-              Alertes Récentes
+              {t('dashboard.recentAlerts')}
             </h2>
             <button
               onClick={() => navigate('/alertes')}
               className="text-sm text-accent-primary hover:underline">
               
-              Voir tout
+              {t('dashboard.viewAll')}
             </button>
           </div>
           <div className="p-0 flex-1 overflow-y-auto">
@@ -201,7 +207,7 @@ export const Dashboard: React.FC = () => {
               </ul> :
 
             <div className="p-6 text-center text-gray-500 text-sm">
-                Aucune alerte récente.
+                {t('dashboard.noRecentAlerts')}
               </div>
             }
           </div>

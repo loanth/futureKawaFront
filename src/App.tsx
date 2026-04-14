@@ -15,7 +15,7 @@ import { WarehouseView } from './pages/WarehouseView';
 import { LotDetail } from './pages/LotDetail';
 import { Alerts } from './pages/Alerts';
 
-export function App() {
+export default function App() {
   return (
     <AuthProvider>
       <Router>

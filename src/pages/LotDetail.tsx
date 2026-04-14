@@ -12,7 +12,10 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { StatusBadge } from '../components/StatusBadge';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { HumidityChart } from '../components/HumidityChart';
+import { useTranslation } from 'react-i18next';
+
 export const LotDetail: React.FC = () => {
+  const { t } = useTranslation();
   const { idLotGrains } = useParams<{
     idLotGrains: string;
   }>();
@@ -22,6 +25,7 @@ export const LotDetail: React.FC = () => {
   const [alertes, setAlertes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMarkingOut, setIsMarkingOut] = useState(false);
+
   useEffect(() => {
     if (!idLotGrains) return;
     const fetchData = async () => {
@@ -54,7 +58,7 @@ export const LotDetail: React.FC = () => {
       </div>);
 
   }
-  if (!lot) return <div>Lot non trouvé</div>;
+  if (!lot) return <div>{t('lots.lotNotFound')}</div>;
   const ageDays = Math.floor(
     (new Date().getTime() - new Date(lot.datSto).getTime()) / (
     1000 * 60 * 60 * 24)
@@ -107,9 +111,9 @@ export const LotDetail: React.FC = () => {
       <div className="bg-status-danger text-white p-4 rounded-lg flex items-center shadow-md">
           <AlertTriangle className="mr-3" />
           <div>
-            <h3 className="font-bold">LOT PÉRIMÉ</h3>
+            <h3 className="font-bold">{t('lots.expiredLot')}</h3>
             <p className="text-sm opacity-90">
-              Ce lot est stocké depuis plus de 365 jours ({ageDays} jours).
+              {t('lots.expiredLotDescription', { days: ageDays })}
             </p>
           </div>
         </div>
@@ -118,10 +122,9 @@ export const LotDetail: React.FC = () => {
       <div className="bg-status-warning text-white p-4 rounded-lg flex items-center shadow-md">
           <AlertTriangle className="mr-3" />
           <div>
-            <h3 className="font-bold">Lot proche de la péremption</h3>
+            <h3 className="font-bold">{t('lots.nearExpiration')}</h3>
             <p className="text-sm opacity-90">
-              Ce lot est stocké depuis {ageDays} jours. Il sera périmé dans{' '}
-              {365 - ageDays} jours.
+              {t('lots.nearExpirationDescription', { ageDays, daysUntilExpiration: 365 - ageDays })}
             </p>
           </div>
         </div>
@@ -139,11 +142,11 @@ export const LotDetail: React.FC = () => {
             </h1>
             <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
               <span className="flex items-center">
-                <Calendar className="w-4 h-4 mr-1" /> Stocké le{' '}
+                <Calendar className="w-4 h-4 mr-1" /> {t('lots.storedOn')}{' '}
                 {new Date(lot.datSto).toLocaleDateString('fr-FR')}
               </span>
               <span>•</span>
-              <span>{ageDays} jours de stockage</span>
+              <span>{ageDays} {t('lots.storageDays')}</span>
             </div>
           </div>
         </div>
@@ -162,11 +165,11 @@ export const LotDetail: React.FC = () => {
 
             <CheckCircle className="w-4 h-4 mr-2" />
             }
-              Marquer comme sorti
+              {t('lots.markAsOut')}
             </button> :
 
           <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-md border border-gray-200">
-              Sorti le {new Date(lot.datSortie).toLocaleDateString('fr-FR')}
+              {t('lots.outOn')} {new Date(lot.datSortie).toLocaleDateString('fr-FR')}
             </div>
           }
         </div>
@@ -175,7 +178,7 @@ export const LotDetail: React.FC = () => {
       {/* Charts */}
       <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6">
         <h2 className="text-lg font-bold text-coffee-dark mb-6">
-          Historique des conditions de stockage
+          {t('lots.storageConditionHistory')}
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TemperatureChart
@@ -195,42 +198,42 @@ export const LotDetail: React.FC = () => {
       <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-lg font-bold text-coffee-dark">
-            Alertes liées à ce lot
+            {t('lots.relatedAlerts')}
           </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-cream-bg/50 text-coffee-medium text-sm border-b border-gray-100">
-                <th className="p-4 font-medium">Date</th>
-                <th className="p-4 font-medium">Type d'alerte</th>
-                <th className="p-4 font-medium">Valeur mesurée</th>
-                <th className="p-4 font-medium">Statut</th>
+                <th className="p-4 font-medium">{t('alerts.date')}</th>
+                <th className="p-4 font-medium">{t('alerts.alertType')}</th>
+                <th className="p-4 font-medium">{t('alerts.measuredValue')}</th>
+                <th className="p-4 font-medium">{t('alerts.status')}</th>
               </tr>
             </thead>
             <tbody className="text-sm">
               {alertes.map((alerte) =>
               <tr key={alerte.idAlerte} className="border-b border-gray-50">
-                  <td className="p-4 text-gray-600">
-                    {new Date(alerte.dateAlerte).toLocaleString('fr-FR')}
-                  </td>
-                  <td className="p-4 font-medium text-coffee-dark">
-                    {alerte.type}
-                  </td>
-                  <td className="p-4 text-gray-600">
-                    {alerte.valeurMesuree ?
-                  <span className="text-status-danger font-medium">
-                        {alerte.valeurMesuree}{' '}
-                        {alerte.type.includes('Température') ? '°C' : '%'}
-                      </span> :
-
-                  '-'
-                  }
-                  </td>
-                  <td className="p-4">
-                    <StatusBadge status={alerte.statut} />
-                  </td>
-                </tr>
+                <td className="p-4 text-gray-600">
+                  {new Date(alerte.dateAlerte).toLocaleString('fr-FR')}
+                </td>
+                <td className="p-4 font-medium text-coffee-dark">
+                  {alerte.type}
+                </td>
+                <td className="p-4 text-gray-600">
+                  {alerte.valeurMesuree ? (
+                    <span className="text-status-danger font-medium">
+                      {alerte.valeurMesuree}{' '}
+                      {alerte.type.includes('Température') ? '°C' : '%'}
+                    </span>
+                  ) : (
+                    '-'
+                  )}
+                </td>
+                <td className="p-4">
+                  <StatusBadge status={alerte.statut} />
+                </td>
+              </tr>
               )}
               {alertes.length === 0 &&
               <tr>

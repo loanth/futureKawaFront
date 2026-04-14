@@ -12,7 +12,10 @@ import { Breadcrumb } from '../components/Breadcrumb';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { StatusBadge } from '../components/StatusBadge';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+
 export const CountryView: React.FC = () => {
+  const { t } = useTranslation();
   const { idPays } = useParams<{
     idPays: string;
   }>();
@@ -21,6 +24,7 @@ export const CountryView: React.FC = () => {
   const [exploitations, setExploitations] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     if (!idPays) return;
     const fetchData = async () => {
@@ -51,7 +55,7 @@ export const CountryView: React.FC = () => {
       </div>);
 
   }
-  if (!pays) return <div>Pays non trouvé</div>;
+  if (!pays) return <div>{t('countries.countryNotFound')}</div>;
   const chartData = history.
   map((h) => ({
     date: h.date,
@@ -75,7 +79,7 @@ export const CountryView: React.FC = () => {
             {pays.nom}
           </h1>
           <p className="text-coffee-medium mt-2">
-            Vue d'ensemble des exploitations et conditions de stockage
+            {t('countries.overview')}
           </p>
         </div>
       </div>
@@ -84,7 +88,7 @@ export const CountryView: React.FC = () => {
       <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6 flex flex-wrap gap-8">
         <div>
           <h3 className="text-sm font-semibold text-coffee-light uppercase tracking-wider mb-3">
-            Plages Idéales
+            {t('countries.idealRanges')}
           </h3>
           <div className="flex space-x-8">
             <div className="flex items-center">
@@ -92,7 +96,7 @@ export const CountryView: React.FC = () => {
                 <Thermometer className="text-orange-500" size={20} />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Température</p>
+                <p className="text-xs text-gray-500">{t('countries.temperature')}</p>
                 <p className="font-medium text-coffee-dark">
                   {pays.temperatureMin}°C - {pays.temperatureMax}°C
                 </p>
@@ -103,7 +107,7 @@ export const CountryView: React.FC = () => {
                 <Droplets className="text-blue-500" size={20} />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Humidité</p>
+                <p className="text-xs text-gray-500">{t('countries.humidity')}</p>
                 <p className="font-medium text-coffee-dark">
                   {pays.humiditeMin}% - {pays.humiditeMax}%
                 </p>
@@ -117,7 +121,7 @@ export const CountryView: React.FC = () => {
         {/* Exploitations List */}
         <div className="lg:col-span-2 space-y-4">
           <h2 className="text-xl font-bold text-coffee-dark mb-4">
-            Exploitations ({exploitations.length})
+            {t('exploitations.title')} ({exploitations.length})
           </h2>
           {exploitations.map((exp, index) =>
           <motion.div
@@ -141,9 +145,9 @@ export const CountryView: React.FC = () => {
                   {exp.nom}
                 </h3>
                 <div className="flex space-x-4 mt-2 text-sm text-gray-500">
-                  <span>{exp.nbEntrepots} entrepôts</span>
+                  <span>{exp.nbEntrepots} {t('warehouses.title')}</span>
                   <span>•</span>
-                  <span>{exp.nbLots} lots stockés</span>
+                  <span>{exp.nbLots} {t('lots.stored')}</span>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
@@ -157,7 +161,7 @@ export const CountryView: React.FC = () => {
         {/* Chart */}
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-coffee-dark mb-4">
-            Moyenne Température (7j)
+            {t('countries.avgTemp7Days')}
           </h2>
           <TemperatureChart
             data={chartData}

@@ -12,14 +12,20 @@ import {
 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
+
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+  const { t } = useTranslation();
   const { logout, user, selectedCountry } = useAuth();
   const navigate = useNavigate();
   const [activeAlertsCount, setActiveAlertsCount] = useState(0);
+
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
@@ -55,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   ...(selectedCountry === 'Supervision' ? [
     {
       path: '/',
-      label: 'Dashboard',
+      label: t('navigation.dashboard'),
       icon: Home
     }
   ] : []),
@@ -88,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   // Alertes toujours visibles
   {
     path: '/alertes',
-    label: 'Alertes',
+    label: t('navigation.alerts'),
     icon: Bell,
     badge: activeAlertsCount
   },
@@ -97,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   ...(selectedCountry === 'Supervision' ? [
     {
       path: '/parametres',
-      label: 'Paramètres',
+      label: t('common.settings'),
       icon: Settings
     }
   ] : [])
@@ -138,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
 
         <div className="p-6">
           <p className="text-xs text-coffee-light uppercase tracking-wider font-semibold mb-4">
-            Navigation
+            {t('navigation.title')}
           </p>
           <nav className="space-y-2">
             {navItems.map((item) =>
@@ -165,6 +171,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           </nav>
         </div>
 
+        <div className="px-6 pb-4">
+          <LanguageSwitcher />
+        </div>
+
         <div className="mt-auto p-6 border-t border-coffee-medium">
           <div className="flex items-center space-x-3 mb-6">
             <div className="w-10 h-10 rounded-full bg-coffee-medium flex items-center justify-center text-lg font-bold">
@@ -185,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             className="flex items-center space-x-3 text-coffee-light hover:text-white transition-colors w-full px-4 py-2 rounded-lg hover:bg-coffee-medium">
             
             <LogOut size={20} />
-            <span className="font-medium">Déconnexion</span>
+            <span className="font-medium">{t('common.logout')}</span>
           </button>
         </div>
       </aside>

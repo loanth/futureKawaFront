@@ -7,7 +7,10 @@ import { StatusBadge } from '../components/StatusBadge';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+
 export const WarehouseView: React.FC = () => {
+  const { t } = useTranslation();
   const { idEntrepot } = useParams<{
     idEntrepot: string;
   }>();
@@ -73,7 +76,7 @@ export const WarehouseView: React.FC = () => {
       </div>);
 
   }
-  if (!entrepot) return <div>Entrepôt non trouvé</div>;
+  if (!entrepot) return <div>{t('warehouses.warehouseNotFound')}</div>;
   const latestMeasure = mesures.length > 0 ? mesures[mesures.length - 1] : null;
   const pays = entrepot.pays;
   const isTempAlert =
@@ -118,7 +121,7 @@ export const WarehouseView: React.FC = () => {
           </h1>
           <p className="text-gray-500 mt-1">{entrepot.adresse}</p>
           <div className="mt-2 text-sm">
-            <span className="text-gray-500">Capacité: </span>
+            <span className="text-gray-500">{t('warehouses.capacity')}: </span>
             <span className="font-medium">
               {lots.length} / {entrepot.limiteQte} lots
             </span>
@@ -137,7 +140,7 @@ export const WarehouseView: React.FC = () => {
             
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider">
-                Température
+                {t('countries.temperature')}
               </p>
               <p
                 className={`text-xl font-bold ${isTempAlert ? 'text-status-danger' : 'text-status-success'}`}>
@@ -156,7 +159,7 @@ export const WarehouseView: React.FC = () => {
             
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider">
-                Humidité
+                {t('countries.humidity')}
               </p>
               <p
                 className={`text-xl font-bold ${isHumAlert ? 'text-status-danger' : 'text-status-success'}`}>
@@ -172,7 +175,7 @@ export const WarehouseView: React.FC = () => {
       <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-coffee-dark">
-            Conditions Environnementales
+            {t('warehouses.environmentalConditions')}
           </h2>
           <div className="flex space-x-2">
             {[7, 30, 90].map((days) =>
@@ -205,14 +208,14 @@ export const WarehouseView: React.FC = () => {
       <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-coffee-dark">
-            Inventaire des Lots (FIFO)
+            {t('warehouses.lotInventory')} (FIFO)
           </h2>
           <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center space-x-2 bg-accent-primary hover:bg-accent-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium">
             
             <Plus size={16} />
-            <span>Nouveau lot</span>
+            <span>{t('warehouses.newLot')}</span>
           </button>
         </div>
 
@@ -220,10 +223,10 @@ export const WarehouseView: React.FC = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-cream-bg/50 text-coffee-medium text-sm border-b border-gray-100">
-                <th className="p-4 font-medium">ID Lot</th>
-                <th className="p-4 font-medium">Date de stockage</th>
-                <th className="p-4 font-medium">Ancienneté</th>
-                <th className="p-4 font-medium">Statut</th>
+                <th className="p-4 font-medium">{t('warehouses.lotId')}</th>
+                <th className="p-4 font-medium">{t('warehouses.storageDate')}</th>
+                <th className="p-4 font-medium">{t('warehouses.age')}</th>
+                <th className="p-4 font-medium">{t('warehouses.status')}</th>
               </tr>
             </thead>
             <tbody className="text-sm">
@@ -250,7 +253,7 @@ export const WarehouseView: React.FC = () => {
                         ageDays > 300 ? 'text-status-danger font-medium' : ''
                         }>
                         
-                        {ageDays} jours
+                        {ageDays} {t('warehouses.days')}
                       </span>
                     </td>
                     <td className="p-4">
@@ -262,7 +265,7 @@ export const WarehouseView: React.FC = () => {
               {lots.length === 0 &&
               <tr>
                   <td colSpan={4} className="p-8 text-center text-gray-500">
-                    Aucun lot actuellement stocké dans cet entrepôt.
+                    {t('warehouses.noLotsStored')}
                   </td>
                 </tr>
               }
@@ -308,7 +311,7 @@ export const WarehouseView: React.FC = () => {
             
               <div className="flex justify-between items-center p-6 border-b border-gray-100">
                 <h3 className="text-xl font-bold text-coffee-dark">
-                  Ajouter un nouveau lot
+                  {t('warehouses.addNewLot')}
                 </h3>
                 <button
                 onClick={() => setIsModalOpen(false)}

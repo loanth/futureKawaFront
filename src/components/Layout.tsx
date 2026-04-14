@@ -3,6 +3,8 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '../contexts/AuthContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
+
 export const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { isAuthenticated } = useAuth();
@@ -15,16 +17,19 @@ export const Layout: React.FC = () => {
 
       <div className="flex-1 lg:ml-64 flex flex-col min-h-screen">
         {/* Mobile Header */}
-        <header className="lg:hidden bg-white shadow-sm p-4 flex items-center">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="text-coffee-dark p-2 rounded-md hover:bg-cream-bg">
-            
-            <Menu size={24} />
-          </button>
-          <span className="ml-4 font-bold text-coffee-dark text-lg">
-            FutureKawa
-          </span>
+        <header className="lg:hidden bg-white shadow-sm p-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="text-coffee-dark p-2 rounded-md hover:bg-cream-bg">
+              
+              <Menu size={24} />
+            </button>
+            <span className="ml-4 font-bold text-coffee-dark text-lg">
+              FutureKawa
+            </span>
+          </div>
+          <LanguageSwitcher />
         </header>
 
         {/* Main Content Area */}
