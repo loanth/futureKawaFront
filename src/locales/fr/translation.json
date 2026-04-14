@@ -35,6 +35,23 @@
     "warehouses": "Entrepôts",
     "alerts": "Alertes"
   },
+  "accueil": {
+    "welcome": "Bienvenue dans FutureKawa",
+    "description": "Plateforme de supervision intelligente pour vos entrepôts de café",
+    "supervision": "Supervision",
+    "supervisionDesc": "Vue d'ensemble des métriques et alertes",
+    "alerts": "Alertes",
+    "alertsDesc": "Consultez les alertes actives et leur historique",
+    "brazil": "Brésil",
+    "brazilDesc": "Accéder aux données et exploitations brésiliennes",
+    "ecuador": "Équateur",
+    "ecuadorDesc": "Accéder aux données et exploitations équatoriennes",
+    "systemStatus": "État du système",
+    "systemOnline": "Système en ligne",
+    "sensorsActive": "Capteurs actifs",
+    "dataCollection": "Collecte de données",
+    "goToDashboard": "Accéder au tableau de bord"
+  },
   "login": {
     "title": "Connexion",
     "subtitle": "Plateforme de suivi des stocks de grains de café vert",

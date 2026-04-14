@@ -7,10 +7,11 @@ import {
   MapPin,
   ChevronRight } from
 'lucide-react';
-import { api } from '../services/api';
+import { multiCountryApiService } from '../services/multi-country-api';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { StatusBadge } from '../components/StatusBadge';
+import { CountryTabs } from '../components/CountryTabs';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
@@ -26,20 +27,23 @@ export const CountryView: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialiser le service depuis localStorage
+    multiCountryApiService.initFromStorage();
+    
     if (!idPays) return;
     const fetchData = async () => {
       try {
         const [paysData, expsData, historyData] = await Promise.all([
-        // 🔌 APPEL API : GET /api/pays/:id — Récupère les infos du pays (nom, plages température/humidité)
-        api.getPays(idPays),
-        // 🔌 APPEL API : GET /api/pays/:id/exploitations — Liste des exploitations du pays avec nb entrepôts, nb lots, statut global
-        api.getPaysExploitations(idPays),
-        // 🔌 APPEL API : GET /api/pays/:id/mesures/history — Historique température moyenne des 7 derniers jours pour ce pays
-        api.getPaysMeasureHistory(idPays)]
-        );
-        setPays(paysData);
-        setExploitations(expsData);
-        setHistory(historyData);
+          // 🔌 APPEL API : GET /api/pays/:id — Récupère les infos du pays (nom, plages température/humidité)
+          multiCountryApiService.getCountry(idPays),
+          // 🔌 APPEL API : GET /api/pays/:id/exploitations — Liste des exploitations du pays avec nb entrepôts, nb lots, statut global
+          multiCountryApiService.getCountryExploitations(idPays),
+          // 🔌 APPEL API : GET /api/pays/:id/mesures/history — Historique température moyenne des 7 derniers jours pour ce pays
+          multiCountryApiService.getCountryMeasureHistory(idPays)]
+          );
+        setPays(paysData.data);
+        setExploitations(expsData.data || []);
+        setHistory(historyData.data || []);
       } catch (error) {
         console.error('Error fetching country data', error);
       } finally {
@@ -64,9 +68,11 @@ export const CountryView: React.FC = () => {
   reverse(); // Oldest to newest
   return (
     <div className="space-y-6">
+      <CountryTabs />
+      
       <Breadcrumb
         items={[
-        {
+          {
           label: pays.nom
         }]
         } />

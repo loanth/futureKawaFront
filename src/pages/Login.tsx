@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Coffee, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { api } from '../services/api';
+import { multiCountryApiService } from '../services/multi-country-api';
+import { COUNTRIES_CONFIG } from '../config/country-config';
 import { useTranslation } from 'react-i18next';
+import { api } from '../services/api';
 
 export const Login: React.FC = () => {
   const { t } = useTranslation();
@@ -26,9 +28,25 @@ export const Login: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // 🔌 APPEL API : POST /api/auth/login — Authentification utilisateur (email + mot de passe), retourne un token JWT et les infos utilisateur
-      const response = await api.login(email, password);
-      login(response.token, response.user, selectedCountry);
+      // Utiliser les identifiants statiques sans appel API
+      const staticUser = {
+        nom: 'Admin',
+        prenom: 'Super',
+        mail: email
+      };
+      
+      // Initialiser le service multi-pays avec la configuration du pays sélectionné
+      if (selectedCountry !== 'Supervision') {
+        const countryConfig = COUNTRIES_CONFIG.find(config => config.name === selectedCountry);
+        if (countryConfig) {
+          // Définir le pays actif et stocker la configuration
+          multiCountryApiService.setCurrentCountry(countryConfig.code);
+          localStorage.setItem('countryConfig', JSON.stringify(countryConfig));
+        }
+      }
+      
+      // Connexion directe sans API
+      login('static-token', staticUser, selectedCountry);
       
       // Mapping des pays vers leurs IDs
       const countryIds: { [key: string]: number } = {

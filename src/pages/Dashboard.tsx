@@ -8,11 +8,12 @@ import {
   ChevronRight,
   Loader2 } from
 'lucide-react';
-import { api } from '../services/api';
+import { multiCountryApiService } from '../services/multi-country-api';
 import { MetricCard } from '../components/MetricCard';
 import { AlertBanner } from '../components/AlertBanner';
-import { StatusBadge } from '../components/StatusBadge';
+import { CountryTabs } from '../components/CountryTabs';
 import { useTranslation } from 'react-i18next';
+import { COUNTRIES_CONFIG } from '../config/country-config';
 
 export const Dashboard: React.FC = () => {
   const { t } = useTranslation();
@@ -22,24 +23,59 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [summary, alerts] = await Promise.all([
-        // 🔌 APPEL API : GET /api/dashboard/summary — Récupère les métriques globales (lots stockés, en alerte, périmés, entrepôts actifs) et le résumé par pays
-        api.getDashboardSummary(),
-        // 🔌 APPEL API : GET /api/alertes/recent — Récupère les 5 dernières alertes déclenchées
-        api.getRecentAlerts()]
-        );
-        setData(summary);
-        setRecentAlerts(alerts);
-      } catch (error) {
-        console.error('Error fetching dashboard data', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    // Ne pas initialiser depuis localStorage pour éviter les conflits
+    // Le pays sera défini par la sidebar lors de la navigation
   }, []);
+
+  const fetchData = async () => {
+    try {
+      // 🔌 APPEL API : GET /api/dashboard/summary — Récupère les métriques globales (lots stockés, en alerte, périmés, entrepôts actifs) et le résumé par pays
+      const summaryResponse = await multiCountryApiService.getDashboardSummary();
+      
+      // 🔌 APPEL API : GET /api/alertes/recent — Récupère les 5 dernières alertes déclenchées
+      let alertsResponse;
+      try {
+        alertsResponse = await multiCountryApiService.getRecentAlerts();
+      } catch (alertsError) {
+        console.warn('Erreur lors de la récupération des alertes:', alertsError);
+        alertsResponse = { data: [] }; // Valeur par défaut si l'API d'alertes ne fonctionne pas
+      }
+      
+      // Afficher uniquement les données des API qui fonctionnent
+      if (summaryResponse.success) {
+        setData(summaryResponse.data);
+      } else {
+        console.warn('Dashboard API non disponible:', summaryResponse.error);
+        setData({
+          metrics: { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 },
+          summaryByCountry: []
+        });
+      }
+      
+      // Afficher les alertes uniquement si l'API fonctionne
+      if (alertsResponse.success) {
+        setRecentAlerts(alertsResponse.data || []);
+      } else {
+        console.warn('Alertes API non disponible:', alertsResponse.error);
+        setRecentAlerts([]);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data', error);
+      // En cas d'erreur générale, afficher des valeurs par défaut
+      setData({
+        metrics: { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 },
+        summaryByCountry: []
+      });
+      setRecentAlerts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  fetchData();
+  
+  // Définir la fonction fetchData pour le callback de CountryTabs
+  (window as any).fetchDashboardData = fetchData;
 
   if (loading) {
     return (
@@ -67,6 +103,8 @@ export const Dashboard: React.FC = () => {
           {t('dashboard.globalSupervision')}
         </h1>
       </div>
+
+      <CountryTabs />
 
       <AlertBanner status={globalStatus} message={globalMessage} />
 

@@ -36,7 +36,10 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
   maxThreshold,
   title = "Évolution de l'humidité (%)"
 }) => {
-  const labels = data.map((d) => {
+  // Trier les données par date croissante (plus ancien au plus récent)
+  const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  const labels = sortedData.map((d) => {
     const date = new Date(d.date);
     return date.toLocaleDateString('fr-FR', {
       day: '2-digit',
@@ -46,7 +49,7 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
   const datasets: any[] = [
   {
     label: 'Humidité (%)',
-    data: data.map((d) => d.value),
+    data: sortedData.map((d) => d.value),
     borderColor: '#3b82f6',
     backgroundColor: 'rgba(59, 130, 246, 0.1)',
     borderWidth: 2,
@@ -59,7 +62,7 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
   if (minThreshold !== undefined) {
     datasets.push({
       label: `Min (${minThreshold}%)`,
-      data: data.map(() => minThreshold),
+      data: sortedData.map(() => minThreshold),
       borderColor: '#ef4444',
       backgroundColor: 'transparent',
       borderWidth: 1.5,
@@ -73,7 +76,7 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
   if (maxThreshold !== undefined) {
     datasets.push({
       label: `Max (${maxThreshold}%)`,
-      data: data.map(() => maxThreshold),
+      data: sortedData.map(() => maxThreshold),
       borderColor: '#ef4444',
       backgroundColor: 'transparent',
       borderWidth: 1.5,

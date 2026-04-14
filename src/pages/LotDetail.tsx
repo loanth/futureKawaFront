@@ -7,9 +7,10 @@ import {
   AlertTriangle,
   CheckCircle } from
 'lucide-react';
-import { api } from '../services/api';
+import { multiCountryApiService } from '../services/multi-country-api';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { StatusBadge } from '../components/StatusBadge';
+import { CountryTabs } from '../components/CountryTabs';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { useTranslation } from 'react-i18next';
@@ -27,21 +28,36 @@ export const LotDetail: React.FC = () => {
   const [isMarkingOut, setIsMarkingOut] = useState(false);
 
   useEffect(() => {
+    // Initialiser le service depuis localStorage
+    multiCountryApiService.initFromStorage();
+    
     if (!idLotGrains) return;
     const fetchData = async () => {
       try {
-        // 🔌 APPEL API : GET /api/lots/:id — Récupère les infos du lot (datSto, statut, datSortie, entrepôt, exploitation, pays)
-        const lotData = await api.getLot(idLotGrains);
-        if (lotData) {
+        // APPEL API : GET /api/lots/:id — Récupère les infos du lot (datSto, statut, datSortie, entrepôt, exploitation, pays)
+        const lotData = await multiCountryApiService.getLot(idLotGrains);
+        if (lotData.data) {
+          // Déterminer la période du lot : de la date d'entrée à la date de sortie (ou aujourd'hui si pas sorti)
+          const startDate = lotData.data.datSto;
+          const endDate = lotData.data.datSortie || new Date().toISOString();
+          
           const [mesData, alertesData] = await Promise.all([
-          // 🔌 APPEL API : GET /api/entrepot/:idEntrepot/mesures?from=datSto — Mesures température/humidité depuis la date de stockage du lot
-          api.getLotMeasures(lotData.idEntrepot, lotData.datSto),
-          // 🔌 APPEL API : GET /api/lots/:id/alertes — Historique des alertes liées à ce lot
-          api.getLotAlerts(idLotGrains)]
+          // APPEL API : GET /api/entrepot/:idEntrepot/mesures?from=datSto&to=datSortie - Mesures température/humidité sur la période du lot
+          multiCountryApiService.getEntrepotMeasures(lotData.data.idEntrepot, 30), // Utilise l'API standard avec période
+          // APPEL API : GET /api/lots/:id/alertes - Historique des alertes liées à ce lot
+          multiCountryApiService.getLotAlerts(idLotGrains)]
           );
-          setLot(lotData);
-          setMesures(mesData);
-          setAlertes(alertesData);
+          
+          // Filtrer les mesures pour ne garder que celles dans la période du lot
+          const filteredMesures = (mesData.data || []).filter((mesure: any) => {
+            const mesureDate = new Date(mesure.datMesure);
+            const lotStartDate = new Date(startDate);
+            const lotEndDate = new Date(endDate);
+            return mesureDate >= lotStartDate && mesureDate <= lotEndDate;
+          });
+          setLot(lotData.data);
+          setMesures(filteredMesures);
+          setAlertes(alertesData.data || []);
         }
       } catch (error) {
         console.error('Error fetching lot data', error);
@@ -74,18 +90,34 @@ export const LotDetail: React.FC = () => {
   }));
   const handleMarkOut = async () => {
     setIsMarkingOut(true);
-    // 🔌 APPEL API : PUT /api/lots/:id — Mettre à jour le lot : renseigner datSortie et changer le statut
-    // TODO : Remplacer le setTimeout ci-dessous par un vrai appel API
-    setTimeout(() => {
-      setLot({
-        ...lot,
-        datSortie: new Date().toISOString()
+    
+    try {
+      // Appel API pour mettre à jour le lot avec la date de sortie
+      const response = await multiCountryApiService.updateLot(idLotGrains!, {
+        datSortie: new Date().toISOString(),
+        statut: 'sorti'
       });
+      
+      if (response.success && response.data) {
+        // Mettre à jour le lot avec les nouvelles données
+        setLot({
+          ...lot,
+          datSortie: new Date().toISOString(),
+          statut: 'sorti'
+        });
+      } else {
+        console.error('Erreur lors de la mise à jour du lot:', response.error);
+      }
+    } catch (error) {
+      console.error('Erreur lors du marquage du lot comme sorti:', error);
+    } finally {
       setIsMarkingOut(false);
-    }, 800);
+    }
   };
   return (
     <div className="space-y-6">
+      <CountryTabs />
+      
       <Breadcrumb
         items={[
         {

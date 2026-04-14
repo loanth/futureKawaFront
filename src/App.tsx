@@ -9,6 +9,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { Login } from './pages/Login';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
+import { Accueil } from './pages/Accueil';
 import { CountryView } from './pages/CountryView';
 import { ExploitationView } from './pages/ExploitationView';
 import { WarehouseView } from './pages/WarehouseView';
@@ -21,8 +22,9 @@ export default function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout />}>
+          <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
+            <Route path="accueil" element={<Accueil />} />
            <Route path="pays/:idPays" element={<CountryView />} />
           <Route
               path="exploitation/:idExploitation"
@@ -34,6 +36,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
-    </AuthProvider>);
-
+    </AuthProvider>
+  );
 }

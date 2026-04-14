@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, Plus, Thermometer, Droplets, Calendar, X } from 'lucide-react';
-import { api } from '../services/api';
+import { multiCountryApiService } from '../services/multi-country-api';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { StatusBadge } from '../components/StatusBadge';
+import { CountryTabs } from '../components/CountryTabs';
 import { TemperatureChart } from '../components/TemperatureChart';
 import { HumidityChart } from '../components/HumidityChart';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,29 +20,28 @@ export const WarehouseView: React.FC = () => {
   const [mesures, setMesures] = useState<any[]>([]);
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<number>(30); // days
-  // Modal state
+  const [period, setPeriod] = useState<number>(30);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newLotDate, setNewLotDate] = useState(
     new Date().toISOString().split('T')[0]
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
+    multiCountryApiService.initFromStorage();
+    
     if (!idEntrepot) return;
     const fetchData = async () => {
       setLoading(true);
       try {
         const [entData, mesData, lotsData] = await Promise.all([
-        // 🔌 APPEL API : GET /api/entrepot/:id — Récupère les infos de l'entrepôt (nom, adresse, limiteQte, exploitation, pays)
-        api.getEntrepot(idEntrepot),
-        // 🔌 APPEL API : GET /api/entrepot/:id/mesures?periode=Xj — Récupère les mesures température/humidité sur la période sélectionnée
-        api.getEntrepotMeasures(idEntrepot, period),
-        // 🔌 APPEL API : GET /api/entrepot/:id/lots — Liste des lots stockés triés par datSto croissante (FIFO)
-        api.getEntrepotLots(idEntrepot)]
-        );
-        setEntrepot(entData);
-        setMesures(mesData);
-        setLots(lotsData);
+          multiCountryApiService.getEntrepot(idEntrepot),
+          multiCountryApiService.getEntrepotMeasures(idEntrepot, period),
+          multiCountryApiService.getEntrepotLots(idEntrepot)
+        ]);
+        setEntrepot(entData.data);
+        setMesures(mesData.data || []);
+        setLots(lotsData.data || []);
       } catch (error) {
         console.error('Error fetching warehouse data', error);
       } finally {
@@ -50,70 +50,86 @@ export const WarehouseView: React.FC = () => {
     };
     fetchData();
   }, [idEntrepot, period]);
-  const handleAddLot = (e: React.FormEvent) => {
+
+  const handleAddLot = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    // 🔌 APPEL API : POST /api/entrepot/:id/lots — Créer un nouveau lot dans cet entrepôt (body: { datSto, idEntrepot })
-    // TODO : Remplacer le setTimeout ci-dessous par un vrai appel API, puis rafraîchir la liste des lots
-    setTimeout(() => {
-      const newLot = {
-        idLotGrains: `lot-${idEntrepot}-new-${Math.floor(Math.random() * 1000)}`,
-        idEntrepot: idEntrepot,
-        datSto: new Date(newLotDate).toISOString(),
-        statut: 'conforme'
-      };
-      setLots([newLot, ...lots]);
+    
+    try {
+      // Appel API pour créer un nouveau lot
+      const response = await multiCountryApiService.createLot(idEntrepot!, {
+        datSto: new Date(newLotDate).toISOString()
+      });
+      
+      if (response.success && response.data) {
+        // Rafraîchir la liste des lots après l'ajout
+        const lotsData = await multiCountryApiService.getEntrepotLots(idEntrepot!);
+        setLots(lotsData.data || []);
+        
+        setIsModalOpen(false);
+        setNewLotDate(new Date().toISOString().split('T')[0]);
+      } else {
+        console.error('Erreur lors de la création du lot:', response.error);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du lot:', error);
+    } finally {
       setIsSubmitting(false);
-      setIsModalOpen(false);
-      // Reset form
-      setNewLotDate(new Date().toISOString().split('T')[0]);
-    }, 600);
+    }
   };
+
   if (loading && !entrepot) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
-      </div>);
-
+      </div>
+    );
   }
+
   if (!entrepot) return <div>{t('warehouses.warehouseNotFound')}</div>;
-  const latestMeasure = mesures.length > 0 ? mesures[mesures.length - 1] : null;
+
+  const latestMeasure = mesures.length > 0 
+    ? [...mesures].sort((a, b) => new Date(b.datMesure).getTime() - new Date(a.datMesure).getTime())[0]
+    : null;
   const pays = entrepot.pays;
   const isTempAlert =
-  latestMeasure && (
-  latestMeasure.temperature < pays.temperatureMin ||
-  latestMeasure.temperature > pays.temperatureMax);
+    latestMeasure && (
+      latestMeasure.temperature < pays.temperatureMin ||
+    latestMeasure.temperature > pays.temperatureMax);
   const isHumAlert =
-  latestMeasure && (
-  latestMeasure.humidite < pays.humiditeMin ||
-  latestMeasure.humidite > pays.humiditeMax);
-  const chartDataTemp = mesures.map((m) => ({
+    latestMeasure && (
+      latestMeasure.humidite < pays.humiditeMin ||
+    latestMeasure.humidite > pays.humiditeMax);
+  const chartDataTemp = mesures.map((m: any) => ({
     date: m.datMesure,
     value: m.temperature
   }));
-  const chartDataHum = mesures.map((m) => ({
+  const chartDataHum = mesures.map((m: any) => ({
     date: m.datMesure,
     value: m.humidite
   }));
+
   return (
     <div className="space-y-6">
-      <Breadcrumb
-        items={[
-        {
-          label: pays.nom,
-          path: `/pays/${pays.idPays}`
-        },
-        {
-          label: entrepot.exploitation.nom,
-          path: `/exploitation/${entrepot.exploitation.idExploitation}`
-        },
-        {
-          label: entrepot.nom
-        }]
-        } />
+      <CountryTabs />
       
+      {entrepot && pays && (
+        <Breadcrumb
+          items={[
+            {
+              label: pays.nom,
+              path: `/pays/${pays.idPays}`
+            },
+            {
+              label: entrepot.exploitation?.nom || 'Exploitation',
+              path: entrepot.exploitation?.idExploitation ? `/exploitation/${entrepot.exploitation.idExploitation}` : '#'
+            },
+            {
+              label: entrepot.nom || 'Entrepôt'
+            }]
+          } />
+      )}
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl shadow-card border border-coffee-light/10">
         <div>
           <h1 className="text-2xl font-bold text-coffee-dark">
@@ -128,14 +144,13 @@ export const WarehouseView: React.FC = () => {
           </div>
         </div>
 
-        {/* Real-time Indicators */}
         <div className="flex space-x-4">
           <div
             className={`p-4 rounded-lg border flex items-center space-x-3 ${isTempAlert ? 'bg-status-danger/10 border-status-danger/20' : 'bg-status-success/10 border-status-success/20'}`}>
             
             <Thermometer
               className={
-              isTempAlert ? 'text-status-danger' : 'text-status-success'
+                isTempAlert ? 'text-status-danger' : 'text-status-success'
               } />
             
             <div>
@@ -154,7 +169,7 @@ export const WarehouseView: React.FC = () => {
             
             <Droplets
               className={
-              isHumAlert ? 'text-status-danger' : 'text-status-success'
+                isHumAlert ? 'text-status-danger' : 'text-status-success'
               } />
             
             <div>
@@ -171,7 +186,6 @@ export const WarehouseView: React.FC = () => {
         </div>
       </div>
 
-      {/* Charts Section */}
       <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-coffee-dark">
@@ -204,7 +218,6 @@ export const WarehouseView: React.FC = () => {
         </div>
       </div>
 
-      {/* Lots Table */}
       <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-lg font-bold text-coffee-dark">
@@ -230,11 +243,12 @@ export const WarehouseView: React.FC = () => {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {lots.map((lot) => {
+              {lots.map((lot: any) => {
                 const ageDays = Math.floor(
                   (new Date().getTime() - new Date(lot.datSto).getTime()) / (
-                  1000 * 60 * 60 * 24)
-                );
+                    1000 * 60 * 60 * 24)
+                  );
+                console.log('Lot data:', lot);
                 return (
                   <tr
                     key={lot.idLotGrains}
@@ -242,7 +256,7 @@ export const WarehouseView: React.FC = () => {
                     className="border-b border-gray-50 hover:bg-cream-bg cursor-pointer transition-colors">
                     
                     <td className="p-4 font-medium text-coffee-dark">
-                      {lot.idLotGrains}
+                      Lot #{lot.idLotGrains}
                     </td>
                     <td className="p-4 text-gray-600">
                       {new Date(lot.datSto).toLocaleDateString('fr-FR')}
@@ -250,7 +264,7 @@ export const WarehouseView: React.FC = () => {
                     <td className="p-4 text-gray-600">
                       <span
                         className={
-                        ageDays > 300 ? 'text-status-danger font-medium' : ''
+                          ageDays > 300 ? 'text-status-danger font-medium' : ''
                         }>
                         
                         {ageDays} {t('warehouses.days')}
@@ -259,8 +273,8 @@ export const WarehouseView: React.FC = () => {
                     <td className="p-4">
                       <StatusBadge status={lot.statut} />
                     </td>
-                  </tr>);
-
+                  </tr>
+                );
               })}
               {lots.length === 0 &&
               <tr>
@@ -274,48 +288,47 @@ export const WarehouseView: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Nouveau Lot */}
       <AnimatePresence>
-        {isModalOpen &&
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-            initial={{
-              opacity: 0
-            }}
-            animate={{
-              opacity: 1
-            }}
-            exit={{
-              opacity: 0
-            }}
-            className="absolute inset-0 bg-coffee-dark/60 backdrop-blur-sm"
-            onClick={() => setIsModalOpen(false)} />
+              initial={{
+                opacity: 0
+              }}
+              animate={{
+                opacity: 1
+              }}
+              exit={{
+                opacity: 0
+              }}
+              className="absolute inset-0 bg-coffee-dark/60 backdrop-blur-sm"
+              onClick={() => setIsModalOpen(false)} />
           
             <motion.div
-            initial={{
-              opacity: 0,
-              scale: 0.95,
-              y: 20
-            }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              y: 0
-            }}
-            exit={{
-              opacity: 0,
-              scale: 0.95,
-              y: 20
-            }}
-            className="relative bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+              initial={{
+                opacity: 0,
+                scale: 0.95,
+                y: 20
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.95,
+                y: 20
+              }}
+              className="relative bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
             
               <div className="flex justify-between items-center p-6 border-b border-gray-100">
                 <h3 className="text-xl font-bold text-coffee-dark">
                   {t('warehouses.addNewLot')}
                 </h3>
                 <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-coffee-dark transition-colors">
+                  onClick={() => setIsModalOpen(false)}
+                  className="text-gray-400 hover:text-coffee-dark transition-colors">
                 
                   <X size={20} />
                 </button>
@@ -324,8 +337,8 @@ export const WarehouseView: React.FC = () => {
               <form onSubmit={handleAddLot} className="p-6">
                 <div className="mb-6">
                   <label
-                  htmlFor="dateStockage"
-                  className="block text-sm font-medium text-coffee-dark mb-2">
+                    htmlFor="dateStockage"
+                    className="block text-sm font-medium text-coffee-dark mb-2">
                   
                     Date de stockage
                   </label>
@@ -334,46 +347,46 @@ export const WarehouseView: React.FC = () => {
                       <Calendar className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
-                    type="date"
-                    id="dateStockage"
-                    required
-                    value={newLotDate}
-                    onChange={(e) => setNewLotDate(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-accent-primary focus:border-accent-primary sm:text-sm text-coffee-dark" />
+                      type="date"
+                      id="dateStockage"
+                      required
+                      value={newLotDate}
+                      onChange={(e) => setNewLotDate(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-accent-primary focus:border-accent-primary sm:text-sm text-coffee-dark" />
                   
                   </div>
                   <p className="mt-2 text-xs text-gray-500">
-                    L'entrepôt actuel ({entrepot.nom}) sera automatiquement
+                    L'entrepôt actuel ({entrepot?.nom || 'Entrepôt'}) sera automatiquement
                     assigné.
                   </p>
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100">
                   <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-coffee-medium bg-cream-bg hover:bg-gray-100 rounded-lg transition-colors">
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 text-sm font-medium text-coffee-medium bg-cream-bg hover:bg-gray-100 rounded-lg transition-colors">
                   
                     Annuler
                   </button>
                   <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-accent-primary hover:bg-accent-primary/90 rounded-lg transition-colors disabled:opacity-70">
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex items-center px-4 py-2 text-sm font-medium text-white bg-accent-primary hover:bg-accent-primary/90 rounded-lg transition-colors disabled:opacity-70">
                   
-                    {isSubmitting ?
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" /> :
-
-                  <Plus className="w-4 h-4 mr-2" />
-                  }
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Plus className="w-4 h-4 mr-2" />
+                    )}
                     Ajouter le lot
                   </button>
                 </div>
               </form>
             </motion.div>
           </div>
-        }
+        )}
       </AnimatePresence>
-    </div>);
-
+    </div>
+  );
 };
