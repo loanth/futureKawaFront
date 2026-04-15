@@ -1,9 +1,12 @@
 import React, { useEffect, useState, createContext, useContext, ReactNode } from 'react';
+
 interface User {
   nom: string;
   prenom: string;
   mail: string;
+  role?: 'supervision' | 'user';
 }
+
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
@@ -11,6 +14,7 @@ interface AuthContextType {
   login: (token: string, user: User, selectedCountry?: string) => void;
   logout: () => void;
   setSelectedCountry: (country: string | null) => void;
+  isSupervision: () => boolean;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: {children: ReactNode;}) => {
@@ -63,6 +67,10 @@ export const AuthProvider = ({ children }: {children: ReactNode;}) => {
     }
     setSelectedCountryState(country);
   };
+
+  const isSupervision = () => {
+    return user?.role === 'supervision';
+  };
   return (
     <AuthContext.Provider
       value={{
@@ -71,7 +79,8 @@ export const AuthProvider = ({ children }: {children: ReactNode;}) => {
         selectedCountry,
         login,
         logout,
-        setSelectedCountry
+        setSelectedCountry,
+        isSupervision
       }}>
       
       {children}

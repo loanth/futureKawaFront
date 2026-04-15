@@ -10,6 +10,16 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
 }) => {
   let bgColor = 'bg-gray-100';
   let textColor = 'text-gray-800';
+  
+  if (!status) {
+    return (
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${bgColor} ${textColor} ${className}`}>
+        Inconnu
+      </span>
+    );
+  }
+  
   const normalizedStatus = status.toLowerCase();
   if (normalizedStatus === 'conforme' || normalizedStatus === 'traitée') {
     bgColor = 'bg-status-success/10';

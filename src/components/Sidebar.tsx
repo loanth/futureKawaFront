@@ -5,13 +5,12 @@ import {
   MapPin,
   Bell,
   LogOut,
-  Menu,
   X,
-  Coffee,
-  Settings } from
+  Coffee } from
 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
+import { multiCountryApiService } from '../services/multi-country-api';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
@@ -22,9 +21,10 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const { t } = useTranslation();
-  const { logout, user, selectedCountry } = useAuth();
+  const { logout, user, isSupervision } = useAuth();
   const navigate = useNavigate();
   const [activeAlertsCount, setActiveAlertsCount] = useState(0);
+  const [currentCountryConfig, setCurrentCountryConfig] = useState(multiCountryApiService.getCurrentCountryConfig());
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -41,24 +41,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     fetchAlerts();
     // In a real app, we might poll this or use websockets
   }, []);
+
+  // Écouter les changements de pays
+  useEffect(() => {
+    const handleCountryChange = () => {
+      setCurrentCountryConfig(multiCountryApiService.getCurrentCountryConfig());
+    };
+
+    // Écouter l'événement personnalisé
+    window.addEventListener('countryChanged', handleCountryChange);
+    
+    // Initialiser
+    multiCountryApiService.initFromStorage();
+    handleCountryChange();
+
+    return () => {
+      window.removeEventListener('countryChanged', handleCountryChange);
+    };
+  }, []);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  // Fonction helper pour convertir le nom du pays en ID
-  const getCountryId = (countryName: string): number => {
-    const countryIds: { [key: string]: number } = {
-      'Brésil': 1,
-      'Équateur': 2,
-      'Colombie': 3
-    };
-    return countryIds[countryName] || 0;
-  };
-
   const navItems = [
-  // Dashboard et Paramètres seulement en mode supervision
-  ...(selectedCountry === 'Supervision' ? [
+  // Dashboard uniquement visible en mode supervision
+  ...(isSupervision() ? [
     {
       path: '/',
       label: t('navigation.dashboard'),
@@ -66,27 +75,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     }
   ] : []),
   
-  // Pays sélectionné ou tous les pays en supervision
-  ...(selectedCountry === 'Supervision' ? [
+  // Pays actuellement sélectionné
+  ...(currentCountryConfig ? [
     {
-      path: '/pays/1',
-      label: 'Brésil',
-      icon: MapPin
-    },
-    {
-      path: '/pays/2',
-      label: 'Équateur',
-      icon: MapPin
-    },
-    {
-      path: '/pays/3',
-      label: 'Colombie',
-      icon: MapPin
-    }
-  ] : selectedCountry && selectedCountry !== 'Supervision' ? [
-    {
-      path: `/pays/${getCountryId(selectedCountry)}`,
-      label: selectedCountry,
+      path: `/pays/${currentCountryConfig.code}`,
+      label: `${currentCountryConfig.flag} ${currentCountryConfig.name}`,
       icon: MapPin
     }
   ] : []),
@@ -97,16 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     label: t('navigation.alerts'),
     icon: Bell,
     badge: activeAlertsCount
-  },
-  
-  // Paramètres seulement en supervision
-  ...(selectedCountry === 'Supervision' ? [
-    {
-      path: '/parametres',
-      label: t('common.settings'),
-      icon: Settings
-    }
-  ] : [])
+  }
 ];
 
   return (
