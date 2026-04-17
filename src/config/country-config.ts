@@ -5,6 +5,7 @@ export interface CountryConfig {
   flag: string;
   baseUrl: string;
   endpoints: {
+    auth: string;
     pays: string;
     exploitation: string;
     entrepot: string;
@@ -23,6 +24,7 @@ export const COUNTRIES_CONFIG: CountryConfig[] = [
     flag: 'BR',
     baseUrl: 'http://localhost:5000',
     endpoints: {
+      auth: '/api',
       pays: '/api/pays',
       exploitation: '/api/exploitations',
       entrepot: '/api/entrepots',
@@ -39,6 +41,7 @@ export const COUNTRIES_CONFIG: CountryConfig[] = [
     flag: 'EC',
     baseUrl: 'https://api.futurekawa.com.ec',
     endpoints: {
+      auth: '/api',
       pays: '/api/pays',
       exploitation: '/api/exploitations',
       entrepot: '/api/entrepots',
@@ -55,6 +58,7 @@ export const COUNTRIES_CONFIG: CountryConfig[] = [
     flag: 'CO',
     baseUrl: 'https://api.futurekawa.com.co',
     endpoints: {
+      auth: '/api',
       pays: '/api/pays',
       exploitation: '/api/exploitations',
       entrepot: '/api/entrepots',

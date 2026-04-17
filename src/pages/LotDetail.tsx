@@ -92,19 +92,26 @@ export const LotDetail: React.FC = () => {
     setIsMarkingOut(true);
     
     try {
-      // Appel API pour mettre à jour le lot avec la date de sortie
-      const response = await multiCountryApiService.updateLot(idLotGrains!, {
+      const updateData = {
         datSortie: new Date().toISOString(),
-        statut: 'sorti'
-      });
+        statut: 'Vendu'
+      };
+      
+      console.log('Envoi de la mise à jour du lot:', idLotGrains, updateData);
+      
+      // Appel API pour mettre à jour le lot avec la date de sortie
+      const response = await multiCountryApiService.updateLot(idLotGrains!, updateData);
+      
+      console.log('Réponse de l\'API:', response);
       
       if (response.success && response.data) {
         // Mettre à jour le lot avec les nouvelles données
         setLot({
           ...lot,
           datSortie: new Date().toISOString(),
-          statut: 'sorti'
+          statut: 'Vendu'
         });
+        console.log('Lot mis à jour localement avec succès');
       } else {
         console.error('Erreur lors de la mise à jour du lot:', response.error);
       }

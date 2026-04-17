@@ -1,4 +1,4 @@
-import { getCountryApiUrl, getConfiguredCountries, CountryConfig } from '../config/country-config';
+import { CountryConfig, getCountryApiUrl, COUNTRIES_CONFIG } from '../config/country-config';
 
 // Types pour les réponses des APIs
 export interface ApiResponse<T> {
@@ -14,12 +14,12 @@ export class MultiCountryApiService {
 
   constructor() {
     // Par défaut, utiliser le premier pays configuré
-    this.currentCountry = getConfiguredCountries()[0].code;
+    this.currentCountry = COUNTRIES_CONFIG[0].code;
   }
 
   // Définir le pays actif
   setCurrentCountry(countryCode: string): void {
-    const country = getConfiguredCountries().find(c => c.code === countryCode);
+    const country = COUNTRIES_CONFIG.find(c => c.code === countryCode);
     if (country) {
       this.currentCountry = countryCode;
       // Stocker dans localStorage pour persistance
@@ -37,7 +37,7 @@ export class MultiCountryApiService {
 
   // Obtenir la configuration du pays actif
   getCurrentCountryConfig(): CountryConfig | null {
-    return getConfiguredCountries().find(c => c.code === this.currentCountry) || null;
+    return COUNTRIES_CONFIG.find(c => c.code === this.currentCountry) || null;
   }
 
   // Initialiser depuis localStorage
@@ -127,16 +127,77 @@ export class MultiCountryApiService {
   }
 
   // Authentification
-  async login(mail: string, mdp: string): Promise<ApiResponse<any>> {
-    return this.fetchFromCurrentCountry('auth', '/auth/validate', {
+  async login(email: string, password: string): Promise<ApiResponse<any>> {
+    return this.fetchFromCurrentCountry('auth', '/login', {
       method: 'POST',
-      body: JSON.stringify({ mail, mdp })
+      body: JSON.stringify({ email, password })
     });
   }
 
   // Dashboard
   async getDashboardSummary(): Promise<ApiResponse<any>> {
     return this.fetchFromCurrentCountry('dashboard', '/summary');
+  }
+
+  // Dashboard multi-pays pour la supervision
+  async getAllCountriesDashboardSummary() {
+    const results: any[] = [];
+    let successfulCount = 0;
+    let failedCount = 0;
+
+    console.log('Récupération des données dashboard pour tous les pays...');
+
+    for (const country of COUNTRIES_CONFIG) {
+      try {
+        console.log(`Tentative de connexion à ${country.name} (${country.baseUrl})...`);
+        
+        // Temporairement changer de pays pour cet appel
+        const originalCountry = this.currentCountry;
+        this.setCurrentCountry(country.code);
+        
+        const response = await this.fetchFromCurrentCountry('dashboard', '/summary');
+        
+        // Restaurer le pays original
+        this.setCurrentCountry(originalCountry);
+
+        if (response.success) {
+          console.log(`Succès pour ${country.name}`);
+          successfulCount++;
+          results.push({
+            country,
+            data: response.data,
+            status: 'success' as const
+          });
+        } else {
+          console.log(`Erreur pour ${country.name}:`, response.error);
+          failedCount++;
+          results.push({
+            country,
+            data: null,
+            status: 'error' as const,
+            error: response.error
+          });
+        }
+      } catch (error) {
+        console.log(`Erreur de connexion pour ${country.name}:`, error);
+        failedCount++;
+        results.push({
+          country,
+          data: null,
+          status: 'error' as const,
+          error: error instanceof Error ? error.message : 'Erreur de connexion'
+        });
+      }
+    }
+
+    console.log(`Résultat: ${successfulCount} succès, ${failedCount} échecs sur ${COUNTRIES_CONFIG.length} pays`);
+
+    return {
+      countries: results,
+      totalCountries: COUNTRIES_CONFIG.length,
+      successfulCountries: successfulCount,
+      failedCountries: failedCount
+    };
   }
 
   async getRecentAlerts(): Promise<ApiResponse<any>> {
@@ -267,10 +328,13 @@ export class MultiCountryApiService {
   }
 
   async updateLot(id: string, data: { datSortie?: string; statut?: string; }): Promise<ApiResponse<any>> {
-    return this.fetchFromCurrentCountry('lot', `/${id}`, {
+    console.log(`updateLot appelé avec id=${id}, data=`, data);
+    const result = await this.fetchFromCurrentCountry('lot', `/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data)
     });
+    console.log(`updateLot réponse:`, result);
+    return result;
   }
 
   async deleteLot(id: string): Promise<ApiResponse<any>> {
@@ -282,7 +346,7 @@ export class MultiCountryApiService {
   // Vérifier la connectivité avec l'API du pays actif
   async checkConnectivity(countryCode?: string): Promise<ApiResponse<{ connected: boolean; country: CountryConfig }>> {
     const country = countryCode ? 
-      getConfiguredCountries().find(c => c.code === countryCode) : 
+      COUNTRIES_CONFIG.find(c => c.code === countryCode) : 
       this.getCurrentCountryConfig();
     
     if (!country) {
@@ -328,7 +392,7 @@ export class MultiCountryApiService {
 
   // Vérifier la connectivité de tous les pays
   async checkAllCountriesConnectivity(): Promise<ApiResponse<Array<{ country: string; connected: boolean; responseTime: number }>>> {
-    const configuredCountries = getConfiguredCountries();
+    const configuredCountries = COUNTRIES_CONFIG;
     const connectivityPromises = configuredCountries.map(async country => {
       const startTime = Date.now();
       const response = await this.fetchFromCountry(country.code, 'exploitation', '/health');

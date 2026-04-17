@@ -28,13 +28,6 @@ export const Login: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Utiliser les identifiants statiques sans appel API
-      const staticUser = {
-        nom: 'Admin',
-        prenom: 'Super',
-        mail: email
-      };
-      
       // Initialiser le service multi-pays avec la configuration du pays sélectionné
       if (selectedCountry !== 'Supervision') {
         const countryConfig = COUNTRIES_CONFIG.find(config => config.name === selectedCountry);
@@ -42,28 +35,43 @@ export const Login: React.FC = () => {
           // Définir le pays actif et stocker la configuration
           multiCountryApiService.setCurrentCountry(countryConfig.code);
           localStorage.setItem('countryConfig', JSON.stringify(countryConfig));
+          
+          // Appel API pour l'authentification
+          const response = await multiCountryApiService.login(email, password);
+          
+          if (response.success && response.data) {
+            // Connexion réussie
+            login(response.data.token, response.data.user, selectedCountry);
+            
+            // Mapping des pays vers leurs IDs
+            const countryIds: { [key: string]: number } = {
+              'Brésil': 1,
+              'Équateur': 2,
+              'Colombie': 3
+            };
+            
+            // Rediriger selon le choix
+            const countryId = countryIds[selectedCountry];
+            navigate(`/pays/${countryId}`);
+          } else {
+            setError(response.error || 'Erreur de connexion');
+          }
         }
-      }
-      
-      // Connexion directe sans API
-      login('static-token', staticUser, selectedCountry);
-      
-      // Mapping des pays vers leurs IDs
-      const countryIds: { [key: string]: number } = {
-        'Brésil': 1,
-        'Équateur': 2,
-        'Colombie': 3
-      };
-      
-      // Rediriger selon le choix
-      if (selectedCountry === 'Supervision') {
-        navigate('/');
       } else {
-        const countryId = countryIds[selectedCountry];
-        navigate(`/pays/${countryId}`);
+        // Mode supervision - connexion statique
+        const staticUser = {
+          nom: 'Admin',
+          prenom: 'Super',
+          mail: email,
+          role: 'supervision' as const
+        };
+        
+        // Connexion directe sans API pour la supervision
+        login('static-token', staticUser, selectedCountry);
+        navigate('/');
       }
     } catch (err: any) {
-      setError(t('login.loginError'));
+      setError(err.message || t('login.loginError'));
     } finally {
       setIsLoading(false);
     }

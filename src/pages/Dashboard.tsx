@@ -6,7 +6,9 @@ import {
   Clock,
   Building2,
   ChevronRight,
-  Loader2 } from
+  Loader2,
+  Wifi,
+  WifiOff } from
 'lucide-react';
 import { multiCountryApiService } from '../services/multi-country-api';
 import { MetricCard } from '../components/MetricCard';
@@ -14,10 +16,13 @@ import { AlertBanner } from '../components/AlertBanner';
 import { CountryTabs } from '../components/CountryTabs';
 import { useTranslation } from 'react-i18next';
 import { COUNTRIES_CONFIG } from '../config/country-config';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Dashboard: React.FC = () => {
   const { t } = useTranslation();
+  const { isSupervision } = useAuth();
   const [data, setData] = useState<any>(null);
+  const [multiCountryData, setMultiCountryData] = useState<any>(null);
   const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -29,39 +34,74 @@ export const Dashboard: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      // 🔌 APPEL API : GET /api/dashboard/summary — Récupère les métriques globales (lots stockés, en alerte, périmés, entrepôts actifs) et le résumé par pays
-      const summaryResponse = await multiCountryApiService.getDashboardSummary();
-      
-      // 🔌 APPEL API : GET /api/alertes/recent — Récupère les 5 dernières alertes déclenchées
-      let alertsResponse;
-      try {
-        alertsResponse = await multiCountryApiService.getRecentAlerts();
-      } catch (alertsError) {
-        console.warn('Erreur lors de la récupération des alertes:', alertsError);
-        alertsResponse = { data: [] }; // Valeur par défaut si l'API d'alertes ne fonctionne pas
-      }
-      
-      // Afficher uniquement les données des API qui fonctionnent
-      if (summaryResponse.success) {
-        setData(summaryResponse.data);
-      } else {
-        console.warn('Dashboard API non disponible:', summaryResponse.error);
-        setData({
-          metrics: { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 },
-          summaryByCountry: []
+      if (isSupervision()) {
+        // Mode supervision : appeler toutes les APIs des pays
+        console.log('Mode supervision : récupération des données de tous les pays...');
+        const multiCountryResponse = await multiCountryApiService.getAllCountriesDashboardSummary();
+        setMultiCountryData(multiCountryResponse);
+        
+        // Calculer les métriques globales
+        let totalMetrics = { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 };
+        let allSummaryByCountry: any[] = [];
+        
+        multiCountryResponse.countries.forEach((countryResult: any) => {
+          if (countryResult.status === 'success' && countryResult.data) {
+            // Ajouter les métriques de ce pays
+            if (countryResult.data.metrics) {
+              totalMetrics.lotsStockes += countryResult.data.metrics.lotsStockes || 0;
+              totalMetrics.lotsAlerte += countryResult.data.metrics.lotsAlerte || 0;
+              totalMetrics.lotsPerimes += countryResult.data.metrics.lotsPerimes || 0;
+              totalMetrics.entrepotsActifs += countryResult.data.metrics.entrepotsActifs || 0;
+            }
+            
+            // Ajouter les données par pays
+            if (countryResult.data.summaryByCountry) {
+              allSummaryByCountry = allSummaryByCountry.concat(countryResult.data.summaryByCountry);
+            }
+          }
         });
+        
+        setData({
+          metrics: totalMetrics,
+          summaryByCountry: allSummaryByCountry
+        });
+        
+      } else {
+        // Mode normal : appeler l'API du pays actuel
+        const summaryResponse = await multiCountryApiService.getDashboardSummary();
+        
+        if (summaryResponse.success) {
+          setData(summaryResponse.data);
+        } else {
+          console.warn('Dashboard API non disponible:', summaryResponse.error);
+          setData({
+            metrics: { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 },
+            summaryByCountry: []
+          });
+        }
       }
       
-      // Afficher les alertes uniquement si l'API fonctionne
-      if (alertsResponse.success) {
-        setRecentAlerts(alertsResponse.data || []);
+      // Récupérer les alertes (uniquement si pas en supervision pour éviter les appels multiples)
+      if (!isSupervision()) {
+        let alertsResponse;
+        try {
+          alertsResponse = await multiCountryApiService.getRecentAlerts();
+          if (alertsResponse.success) {
+            setRecentAlerts(alertsResponse.data || []);
+          } else {
+            console.warn('Alertes API non disponible:', alertsResponse.error);
+            setRecentAlerts([]);
+          }
+        } catch (alertsError) {
+          console.warn('Erreur lors de la récupération des alertes:', alertsError);
+          setRecentAlerts([]);
+        }
       } else {
-        console.warn('Alertes API non disponible:', alertsResponse.error);
-        setRecentAlerts([]);
+        setRecentAlerts([]); // Pas d'alertes en mode supervision
       }
+      
     } catch (error) {
       console.error('Error fetching dashboard data', error);
-      // En cas d'erreur générale, afficher des valeurs par défaut
       setData({
         metrics: { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 },
         summaryByCountry: []
@@ -107,6 +147,62 @@ export const Dashboard: React.FC = () => {
       <CountryTabs />
 
       <AlertBanner status={globalStatus} message={globalMessage} />
+
+      {/* Messages d'information pour les APIs en mode supervision */}
+      {isSupervision() && multiCountryData && (
+        <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6">
+          <h2 className="text-lg font-bold text-coffee-dark mb-4">
+            Statut de connexion aux APIs
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {multiCountryData.countries.map((countryResult: any) => (
+              <div
+                key={countryResult.country.code}
+                className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                  countryResult.status === 'success'
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-red-50 border-red-200'
+                }`}
+              >
+                {countryResult.status === 'success' ? (
+                  <Wifi className="w-5 h-5 text-green-600" />
+                ) : (
+                  <WifiOff className="w-5 h-5 text-red-600" />
+                )}
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-coffee-dark">
+                      {countryResult.country.flag} {countryResult.country.name}
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        countryResult.status === 'success'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {countryResult.status === 'success' ? 'Connecté' : 'Hors ligne'}
+                    </span>
+                  </div>
+                  {countryResult.status === 'error' && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      {countryResult.error}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium">
+                {multiCountryData.successfulCountries} / {multiCountryData.totalCountries}
+              </span>{' '}
+              pays connectés
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard

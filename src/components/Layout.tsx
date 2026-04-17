@@ -4,11 +4,10 @@ import { Menu } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '../contexts/AuthContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { CountrySelector } from './CountrySelector';
 
 export const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated, isSupervision } = useAuth();
+  const { isAuthenticated } = useAuth();
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -31,7 +30,6 @@ export const Layout: React.FC = () => {
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            {isSupervision() && <CountrySelector />}
             <LanguageSwitcher />
           </div>
         </header>
@@ -43,7 +41,6 @@ export const Layout: React.FC = () => {
               FutureKawa
             </span>
             <div className="flex items-center space-x-4">
-              {isSupervision() && <CountrySelector />}
               <LanguageSwitcher />
             </div>
           </div>

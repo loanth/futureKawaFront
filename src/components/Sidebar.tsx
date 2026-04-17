@@ -13,10 +13,20 @@ import { api } from '../services/api';
 import { multiCountryApiService } from '../services/multi-country-api';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+import { COUNTRIES_CONFIG } from '../config/country-config';
 
 interface SidebarProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+}
+
+interface NavItem {
+  path: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  badge?: number;
+  countryCode?: string;
+  onClick?: (e: React.MouseEvent) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
@@ -29,18 +39,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
+        // En mode supervision, ne pas chercher les alertes spécifiques à un pays
+        if (isSupervision()) {
+          setActiveAlertsCount(0);
+          return;
+        }
+
         // 🔌 APPEL API : GET /api/alertes — Récupère toutes les alertes pour compter celles en cours (badge sidebar)
-        const allAlerts = await api.getAllAlerts();
+        const allAlerts = await multiCountryApiService.getAllAlerts();
         setActiveAlertsCount(
-          allAlerts.filter((a) => a.statut === 'en cours').length
+          allAlerts.data?.filter((a: any) => a.statut === 'en cours').length || 0
         );
       } catch (error) {
         console.error('Failed to fetch alerts count', error);
+        setActiveAlertsCount(0);
       }
     };
     fetchAlerts();
     // In a real app, we might poll this or use websockets
-  }, []);
+  }, [isSupervision]);
 
   // Écouter les changements de pays
   useEffect(() => {
@@ -65,7 +82,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     navigate('/login');
   };
 
-  const navItems = [
+  const handleCountryClick = (countryCode: string, e: React.MouseEvent) => {
+    console.log('handleCountryClick appelé avec countryCode:', countryCode, 'isSupervision:', isSupervision());
+    
+    // En mode supervision, changer le pays actif quand on clique
+    if (isSupervision()) {
+      console.log('Changement de pays vers:', countryCode);
+      multiCountryApiService.setCurrentCountry(countryCode);
+      localStorage.setItem('countryConfig', JSON.stringify(COUNTRIES_CONFIG.find(c => c.code === countryCode)));
+      // Déclencher l'événement de changement de pays
+      window.dispatchEvent(new CustomEvent('countryChanged', { detail: countryCode }));
+      console.log('Pays changé, API actuelle:', multiCountryApiService.getCurrentCountry());
+    } else {
+      console.log('Pas en mode supervision, pas de changement de pays');
+    }
+  };
+
+  const navItems: NavItem[] = [
   // Dashboard uniquement visible en mode supervision
   ...(isSupervision() ? [
     {
@@ -75,14 +108,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     }
   ] : []),
   
-  // Pays actuellement sélectionné
-  ...(currentCountryConfig ? [
-    {
-      path: `/pays/${currentCountryConfig.code}`,
-      label: `${currentCountryConfig.flag} ${currentCountryConfig.name}`,
-      icon: MapPin
-    }
-  ] : []),
+  // Pays : tous les pays en supervision, pays actuel en mode normal
+  ...(isSupervision() 
+    ? COUNTRIES_CONFIG.map(country => ({
+        path: `/pays/${country.code}`,
+        label: `${country.flag} ${country.name}`,
+        icon: MapPin,
+        countryCode: country.code,
+        onClick: (e: React.MouseEvent) => handleCountryClick(country.code, e)
+      }))
+    : (currentCountryConfig ? [{
+        path: `/pays/${currentCountryConfig.code}`,
+        label: `${currentCountryConfig.flag} ${currentCountryConfig.name}`,
+        icon: MapPin
+      }] : [])
+  ),
   
   // Alertes toujours visibles
   {
@@ -131,27 +171,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
             {t('navigation.title')}
           </p>
           <nav className="space-y-2">
-            {navItems.map((item) =>
-            <NavLink
-              key={item.path}
-              to={item.path}
-              onClick={() => setIsOpen(false)}
-              className={({ isActive }) => `
-                  flex items-center justify-between px-4 py-3 rounded-lg transition-colors
-                  ${isActive ? 'bg-accent-primary text-white' : 'hover:bg-coffee-medium text-cream-bg/80 hover:text-white'}
-                `}>
-              
-                <div className="flex items-center space-x-3">
-                  <item.icon size={20} />
-                  <span className="font-medium">{item.label}</span>
-                </div>
-                {item.badge !== undefined && item.badge > 0 &&
-              <span className="bg-status-danger text-white text-xs font-bold px-2 py-1 rounded-full">
-                    {item.badge}
-                  </span>
+            {navItems.map((item) => {
+            const handleClick = (e: React.MouseEvent) => {
+              if (item.onClick) {
+                item.onClick(e);
               }
-              </NavLink>
-            )}
+              setIsOpen(false);
+            };
+
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={handleClick}
+                className={({ isActive }) => `
+                    flex items-center justify-between px-4 py-3 rounded-lg transition-colors
+                    ${isActive ? 'bg-accent-primary text-white' : 'hover:bg-coffee-medium text-cream-bg/80 hover:text-white'}
+                  `}>
+                
+                  <div className="flex items-center space-x-3">
+                    <item.icon size={20} />
+                    <span className="font-medium">{item.label}</span>
+                  </div>
+                  {item.badge !== undefined && item.badge > 0 &&
+                <span className="bg-status-danger text-white text-xs font-bold px-2 py-1 rounded-full">
+                      {item.badge}
+                    </span>
+                }
+                </NavLink>
+            );
+          })}
           </nav>
         </div>
 
