@@ -254,8 +254,7 @@ export const Dashboard: React.FC = () => {
               <tbody className="text-sm">
                 {data?.summaryByCountry.map((row: any) =>
                 <tr
-                  key={row.pays.idPays}
-                  onClick={() => navigate(`/pays/${row.pays.idPays}`)}
+                
                   className="border-b border-gray-50 hover:bg-cream-bg cursor-pointer transition-colors">
                   
                     <td className="p-4 font-medium text-coffee-dark flex items-center">

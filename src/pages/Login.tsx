@@ -5,70 +5,75 @@ import { useAuth } from '../contexts/AuthContext';
 import { multiCountryApiService } from '../services/multi-country-api';
 import { COUNTRIES_CONFIG } from '../config/country-config';
 import { useTranslation } from 'react-i18next';
-import { api } from '../services/api';
 
 export const Login: React.FC = () => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('admin@futurekawa.com');
-  const [password, setPassword] = useState('password123');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
+
     if (!selectedCountry) {
       setError('Veuillez sélectionner un pays ou la supervision');
       return;
     }
-    
+
     setIsLoading(true);
+
     try {
-      // Initialiser le service multi-pays avec la configuration du pays sélectionné
       if (selectedCountry !== 'Supervision') {
-        const countryConfig = COUNTRIES_CONFIG.find(config => config.name === selectedCountry);
+        const countryConfig = COUNTRIES_CONFIG.find(
+          config => config.name === selectedCountry
+        );
+
         if (countryConfig) {
-          // Définir le pays actif et stocker la configuration
           multiCountryApiService.setCurrentCountry(countryConfig.code);
           localStorage.setItem('countryConfig', JSON.stringify(countryConfig));
-          
-          // Appel API pour l'authentification
+
           const response = await multiCountryApiService.login(email, password);
-          
+
           if (response.success && response.data) {
-            // Connexion réussie
             login(response.data.token, response.data.user, selectedCountry);
-            
-            // Mapping des pays vers leurs IDs
-            const countryIds: { [key: string]: number } = {
+
+            const countryIds: Record<string, number> = {
               'Brésil': 1,
               'Équateur': 2,
               'Colombie': 3
             };
-            
-            // Rediriger selon le choix
-            const countryId = countryIds[selectedCountry];
-            navigate(`/pays/${countryId}`);
+
+            navigate(`/pays/${countryIds[selectedCountry]}`);
           } else {
             setError(response.error || 'Erreur de connexion');
           }
         }
       } else {
-        // Mode supervision - connexion statique
-        const staticUser = {
-          nom: 'Admin',
-          prenom: 'Super',
-          mail: email,
-          role: 'supervision' as const
-        };
-        
-        // Connexion directe sans API pour la supervision
-        login('static-token', staticUser, selectedCountry);
-        navigate('/');
+        // Supervision → API Brésil
+        multiCountryApiService.setCurrentCountry('BR');
+
+        const response = await multiCountryApiService.login(email, password);
+
+        if (response.success && response.data) {
+          const user = response.data.user;
+
+          if (user.idPoste !== 3) {
+            setError('Accès supervision refusé');
+            return;
+          }
+
+          login(response.data.token, user, selectedCountry);
+          navigate('/');
+        } else {
+          setError(response.error || 'Erreur de connexion');
+        }
       }
     } catch (err: any) {
       setError(err.message || t('login.loginError'));
@@ -79,9 +84,8 @@ export const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream-bg flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-accent-primary/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-coffee-light/10 rounded-full blur-3xl"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-accent-primary/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-coffee-light/10 rounded-full blur-3xl" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="flex justify-center">
@@ -89,9 +93,11 @@ export const Login: React.FC = () => {
             <Coffee className="w-12 h-12 text-cream-bg" />
           </div>
         </div>
+
         <h2 className="mt-6 text-center text-3xl font-extrabold text-coffee-dark">
           FutureKawa
         </h2>
+
         <p className="mt-2 text-center text-sm text-coffee-medium">
           {t('login.subtitle')}
         </p>
@@ -100,96 +106,80 @@ export const Login: React.FC = () => {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
         <div className="bg-white py-8 px-4 shadow-card sm:rounded-xl sm:px-10 border border-coffee-light/10">
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {error &&
-            <div className="bg-status-danger/10 border border-status-danger/20 rounded-lg p-4 flex items-center text-status-danger">
+            {error && (
+              <div className="bg-status-danger/10 border border-status-danger/20 rounded-lg p-4 flex items-center text-status-danger">
                 <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
                 <span className="text-sm font-medium">{error}</span>
               </div>
-            }
+            )}
 
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-coffee-dark">
-                
+              <label className="block text-sm font-medium text-coffee-dark">
                 {t('login.username')}
               </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent-primary focus:border-accent-primary sm:text-sm" />
-                
-              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-accent-primary focus:border-accent-primary sm:text-sm"
+              />
             </div>
 
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-coffee-dark">
-                
+              <label className="block text-sm font-medium text-coffee-dark">
                 {t('login.password')}
               </label>
-              <div className="mt-1">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-accent-primary focus:border-accent-primary sm:text-sm" />
-                
-              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-accent-primary focus:border-accent-primary sm:text-sm"
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-coffee-dark mb-3">
                 {t('login.selectScope')}
               </label>
+
               <div className="space-y-2">
                 {['Brésil', 'Équateur', 'Colombie', 'Supervision'].map((country) => (
-                  <label key={country} className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg">
+                  <label
+                    key={country}
+                    className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg"
+                  >
                     <input
                       type="radio"
                       name="country"
                       value={country}
                       checked={selectedCountry === country}
                       onChange={(e) => setSelectedCountry(e.target.value)}
-                      className="w-4 h-4 text-accent-primary border-gray-300 focus:ring-accent-primary"
+                      className="w-4 h-4 text-accent-primary"
                     />
-                    <span className="text-sm text-coffee-dark font-medium">{country}</span>
+                    <span className="text-sm text-coffee-dark font-medium">
+                      {country}
+                    </span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-accent-primary hover:bg-accent-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-primary disabled:opacity-70 transition-colors">
-                
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  t('login.loginButton')
-                )}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-2.5 px-4 rounded-lg text-sm font-medium text-white bg-accent-primary hover:bg-accent-primary/90 disabled:opacity-70"
+            >
+              {isLoading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                t('login.loginButton')
+              )}
+            </button>
           </form>
-
-          <div className="mt-6 text-center text-xs text-gray-500">
-            <p>Identifiants de test : admin@futurekawa.com / password123</p>
-          </div>
         </div>
       </div>
-    </div>);
-
+    </div>
+  );
 };
