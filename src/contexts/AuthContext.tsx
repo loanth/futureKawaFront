@@ -5,6 +5,7 @@ interface User {
   prenom: string;
   mail: string;
   role?: 'supervision' | 'user';
+  idPoste?: number;
 }
 
 interface AuthContextType {

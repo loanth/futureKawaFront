@@ -191,17 +191,7 @@ export const WarehouseView: React.FC = () => {
           <h2 className="text-lg font-bold text-coffee-dark">
             {t('warehouses.environmentalConditions')}
           </h2>
-          <div className="flex space-x-2">
-            {[7, 30, 90].map((days) =>
-            <button
-              key={days}
-              onClick={() => setPeriod(days)}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${period === days ? 'bg-accent-primary text-white' : 'bg-cream-bg text-coffee-medium hover:bg-coffee-light/20'}`}>
-              
-                {days}j
-              </button>
-            )}
-          </div>
+        
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
