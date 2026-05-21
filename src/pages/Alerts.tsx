@@ -1,7 +1,7 @@
 import React, { useEffect, useState, createElement } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Filter, Download, ChevronRight } from 'lucide-react';
-import { api } from '../services/api';
+import { multiCountryApiService } from '../services/multi-country-api';
 import { StatusBadge } from '../components/StatusBadge';
 import { useTranslation } from 'react-i18next';
 
@@ -14,11 +14,12 @@ export const Alerts: React.FC = () => {
   const [filterPays, setFilterPays] = useState('');
   const [filterType, setFilterType] = useState('');
   useEffect(() => {
+    multiCountryApiService.initFromStorage();
     const fetchAlerts = async () => {
       setLoading(true);
       try {
         // 🔌 APPEL API : GET /api/alertes?pays=X&type=Y&from=Z&to=W — Récupère toutes les alertes avec filtres (pays, type, période)
-        const data = await api.getAllAlerts({
+        const data = await multiCountryApiService.getAllAlerts({
           pays: filterPays || undefined,
           type: filterType || undefined
         });

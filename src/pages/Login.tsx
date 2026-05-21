@@ -23,58 +23,46 @@ export const Login: React.FC = () => {
     setError('');
 
     if (!selectedCountry) {
-      setError('Veuillez sélectionner un pays ou la supervision');
+      setError('Veuillez sélectionner un pays');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      if (selectedCountry !== 'Supervision') {
-        const countryConfig = COUNTRIES_CONFIG.find(
-          config => config.name === selectedCountry
-        );
+      const countryConfig = COUNTRIES_CONFIG.find(
+        config => config.name === selectedCountry
+      );
 
-        if (countryConfig) {
-          multiCountryApiService.setCurrentCountry(countryConfig.code);
-          localStorage.setItem('countryConfig', JSON.stringify(countryConfig));
+      if (!countryConfig) {
+        setError('Pays introuvable');
+        return;
+      }
 
-          const response = await multiCountryApiService.login(email, password);
+      multiCountryApiService.setCurrentCountry(countryConfig.code);
+      localStorage.setItem('countryConfig', JSON.stringify(countryConfig));
 
-          if (response.success && response.data) {
-            login(response.data.token, response.data.user, selectedCountry);
+      const response = await multiCountryApiService.login(email, password);
 
-            const countryIds: Record<string, number> = {
-              'Brésil': 1,
-              'Équateur': 2,
-              'Colombie': 3
-            };
+      if (response.success && response.data) {
+        const user = response.data.user;
+        login(response.data.token, user, selectedCountry);
 
-            navigate(`/pays/${countryIds[selectedCountry]}`);
-          } else {
-            setError(response.error || 'Erreur de connexion');
-          }
-        }
-      } else {
-        // Supervision → API Brésil
-        multiCountryApiService.setCurrentCountry('BR');
-
-        const response = await multiCountryApiService.login(email, password);
-
-        if (response.success && response.data) {
-          const user = response.data.user;
-
-          if (user.idPoste !== 3) {
-            setError('Accès supervision refusé');
-            return;
-          }
-
-          login(response.data.token, user, selectedCountry);
+        // ✅ Si superviseur (idPoste === 3), on redirige vers le dashboard
+        if (user.idPoste === 3) {
           navigate('/');
         } else {
-          setError(response.error || 'Erreur de connexion');
+          const countryIds: Record<string, number> = {
+            'Brésil': 1,
+            'Équateur': 2,
+            'Colombie': 3
+          };
+          navigate(`/pays/${countryIds[selectedCountry]}`);
         }
+      } else {
+        setError(response.error || 'Erreur de connexion');
       }
+
     } catch (err: any) {
       setError(err.message || t('login.loginError'));
     } finally {
@@ -145,7 +133,7 @@ export const Login: React.FC = () => {
               </label>
 
               <div className="space-y-2">
-                {['Brésil', 'Équateur', 'Colombie', 'Supervision'].map((country) => (
+                {['Brésil', 'Équateur', 'Colombie'].map((country) => (
                   <label
                     key={country}
                     className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg"

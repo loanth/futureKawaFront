@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Package,
@@ -8,98 +8,61 @@ import {
   ChevronRight,
   Loader2,
   Wifi,
-  WifiOff } from
-'lucide-react';
+  WifiOff
+} from 'lucide-react';
 import { multiCountryApiService } from '../services/multi-country-api';
 import { MetricCard } from '../components/MetricCard';
 import { AlertBanner } from '../components/AlertBanner';
 import { CountryTabs } from '../components/CountryTabs';
 import { useTranslation } from 'react-i18next';
-import { COUNTRIES_CONFIG } from '../config/country-config';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Dashboard: React.FC = () => {
   const { t } = useTranslation();
-  const { isSupervision } = useAuth();
+  const { user } = useAuth();
+  const isSupervisor = user?.idPoste === 3;
+
   const [data, setData] = useState<any>(null);
   const [multiCountryData, setMultiCountryData] = useState<any>(null);
   const [recentAlerts, setRecentAlerts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // ✅ Redirection si pas superviseur
   useEffect(() => {
-    // Ne pas initialiser depuis localStorage pour éviter les conflits
-    // Le pays sera défini par la sidebar lors de la navigation
-  }, []);
+    if (!isSupervisor) {
+      const stored = localStorage.getItem('countryConfig');
+      const countryConfig = stored ? JSON.parse(stored) : null;
+      navigate(countryConfig ? `/pays/${countryConfig.code}` : '/login', { replace: true });
+    }
+  }, [isSupervisor, navigate]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
-      if (isSupervision()) {
-        // Mode supervision : appeler toutes les APIs des pays
-        console.log('Mode supervision : récupération des données de tous les pays...');
-        const multiCountryResponse = await multiCountryApiService.getAllCountriesDashboardSummary();
-        setMultiCountryData(multiCountryResponse);
-        
-        // Calculer les métriques globales
-        let totalMetrics = { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 };
-        let allSummaryByCountry: any[] = [];
-        
-        multiCountryResponse.countries.forEach((countryResult: any) => {
-          if (countryResult.status === 'success' && countryResult.data) {
-            // Ajouter les métriques de ce pays
-            if (countryResult.data.metrics) {
-              totalMetrics.lotsStockes += countryResult.data.metrics.lotsStockes || 0;
-              totalMetrics.lotsAlerte += countryResult.data.metrics.lotsAlerte || 0;
-              totalMetrics.lotsPerimes += countryResult.data.metrics.lotsPerimes || 0;
-              totalMetrics.entrepotsActifs += countryResult.data.metrics.entrepotsActifs || 0;
-            }
-            
-            // Ajouter les données par pays
-            if (countryResult.data.summaryByCountry) {
-              allSummaryByCountry = allSummaryByCountry.concat(countryResult.data.summaryByCountry);
-            }
+      const multiCountryResponse = await multiCountryApiService.getAllCountriesDashboardSummary();
+      setMultiCountryData(multiCountryResponse);
+
+      let totalMetrics = { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 };
+      let allSummaryByCountry: any[] = [];
+
+      multiCountryResponse.countries.forEach((countryResult: any) => {
+        if (countryResult.status === 'success' && countryResult.data) {
+          if (countryResult.data.metrics) {
+            totalMetrics.lotsStockes     += countryResult.data.metrics.lotsStockes     || 0;
+            totalMetrics.lotsAlerte      += countryResult.data.metrics.lotsAlerte      || 0;
+            totalMetrics.lotsPerimes     += countryResult.data.metrics.lotsPerimes     || 0;
+            totalMetrics.entrepotsActifs += countryResult.data.metrics.entrepotsActifs || 0;
           }
-        });
-        
-        setData({
-          metrics: totalMetrics,
-          summaryByCountry: allSummaryByCountry
-        });
-        
-      } else {
-        // Mode normal : appeler l'API du pays actuel
-        const summaryResponse = await multiCountryApiService.getDashboardSummary();
-        
-        if (summaryResponse.success) {
-          setData(summaryResponse.data);
-        } else {
-          console.warn('Dashboard API non disponible:', summaryResponse.error);
-          setData({
-            metrics: { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 },
-            summaryByCountry: []
-          });
-        }
-      }
-      
-      // Récupérer les alertes (uniquement si pas en supervision pour éviter les appels multiples)
-      if (!isSupervision()) {
-        let alertsResponse;
-        try {
-          alertsResponse = await multiCountryApiService.getRecentAlerts();
-          if (alertsResponse.success) {
-            setRecentAlerts(alertsResponse.data || []);
-          } else {
-            console.warn('Alertes API non disponible:', alertsResponse.error);
-            setRecentAlerts([]);
+          if (countryResult.data.summaryByCountry) {
+            allSummaryByCountry = allSummaryByCountry.concat(countryResult.data.summaryByCountry);
           }
-        } catch (alertsError) {
-          console.warn('Erreur lors de la récupération des alertes:', alertsError);
-          setRecentAlerts([]);
         }
-      } else {
-        setRecentAlerts([]); // Pas d'alertes en mode supervision
-      }
-      
+      });
+
+      setData({ metrics: totalMetrics, summaryByCountry: allSummaryByCountry });
+      setRecentAlerts([]);
+
     } catch (error) {
       console.error('Error fetching dashboard data', error);
       setData({
@@ -110,24 +73,26 @@ export const Dashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-  
-  fetchData();
-  
-  // Définir la fonction fetchData pour le callback de CountryTabs
-  (window as any).fetchDashboardData = fetchData;
+  }, []);
+
+  useEffect(() => {
+    if (!isSupervisor) return;
+    fetchData();
+    (window as any).fetchDashboardData = fetchData;
+  }, [fetchData, isSupervisor]);
+
+  if (!isSupervisor) return null;
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-accent-primary" />
-      </div>);
+      </div>
+    );
   }
 
-  // Determine global status
   let globalStatus: 'nominal' | 'warning' | 'critical' = 'nominal';
-  let globalMessage =
-  t('dashboard.allSystemsOperational');
+  let globalMessage = t('dashboard.allSystemsOperational');
   if (data?.metrics.lotsPerimes > 0) {
     globalStatus = 'critical';
     globalMessage = t('dashboard.criticalAlert', { count: data.metrics.lotsPerimes });
@@ -148,8 +113,8 @@ export const Dashboard: React.FC = () => {
 
       <AlertBanner status={globalStatus} message={globalMessage} />
 
-      {/* Messages d'information pour les APIs en mode supervision */}
-      {isSupervision() && multiCountryData && (
+      {/* Statut de connexion aux APIs */}
+      {multiCountryData && (
         <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6">
           <h2 className="text-lg font-bold text-coffee-dark mb-4">
             Statut de connexion aux APIs
@@ -185,9 +150,7 @@ export const Dashboard: React.FC = () => {
                     </span>
                   </div>
                   {countryResult.status === 'error' && (
-                    <p className="text-xs text-gray-600 mt-1">
-                      {countryResult.error}
-                    </p>
+                    <p className="text-xs text-gray-600 mt-1">{countryResult.error}</p>
                   )}
                 </div>
               </div>
@@ -204,35 +167,36 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
+      {/* Métriques globales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title={t('dashboard.storedLots')}
           value={data?.metrics.lotsStockes || 0}
           icon={Package}
-          colorClass="text-accent-primary" />
-        
+          colorClass="text-accent-primary"
+        />
         <MetricCard
           title={t('dashboard.lotsInAlert')}
           value={data?.metrics.lotsAlerte || 0}
           icon={AlertTriangle}
-          colorClass="text-status-warning" />
-        
+          colorClass="text-status-warning"
+        />
         <MetricCard
           title={t('dashboard.expiredLots')}
           value={data?.metrics.lotsPerimes || 0}
           icon={Clock}
-          colorClass="text-status-danger" />
-        
+          colorClass="text-status-danger"
+        />
         <MetricCard
           title={t('dashboard.activeWarehouses')}
           value={data?.metrics.entrepotsActifs || 0}
           icon={Building2}
-          colorClass="text-coffee-medium" />
-        
+          colorClass="text-coffee-medium"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Table by Country */}
+        {/* Tableau par pays */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-bold text-coffee-dark">
@@ -252,44 +216,40 @@ export const Dashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {data?.summaryByCountry.map((row: any) =>
-                <tr
-                
-                  className="border-b border-gray-50 hover:bg-cream-bg cursor-pointer transition-colors">
-                  
-                    <td className="p-4 font-medium text-coffee-dark flex items-center">
-                      {row.pays.nom}
-                    </td>
+                {data?.summaryByCountry.map((row: any, index: number) => (
+                  <tr
+                    key={row.pays?.id || index}
+                    className="border-b border-gray-50 hover:bg-cream-bg cursor-pointer transition-colors"
+                  >
+                    <td className="p-4 font-medium text-coffee-dark">{row.pays.nom}</td>
                     <td className="p-4 text-gray-600">{row.nbExploitations}</td>
                     <td className="p-4 text-gray-600">{row.nbEntrepots}</td>
                     <td className="p-4 text-gray-600">{row.nbLots}</td>
                     <td className="p-4">
-                      {row.lotsEnAlerte > 0 ?
-                    <span className="text-status-warning font-medium">
-                          {row.lotsEnAlerte}
-                        </span> :
-
-                    <span className="text-gray-400">0</span>
-                    }
+                      {row.lotsEnAlerte > 0 ? (
+                        <span className="text-status-warning font-medium">{row.lotsEnAlerte}</span>
+                      ) : (
+                        <span className="text-gray-400">0</span>
+                      )}
                     </td>
                     <td className="p-4 text-gray-500">
-                      {row.derniereMesure ?
-                    new Date(row.derniereMesure).toLocaleString('fr-FR', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) :
-                    '-'}
+                      {row.derniereMesure
+                        ? new Date(row.derniereMesure).toLocaleString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : '-'}
                     </td>
                   </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Recent Alerts */}
+        {/* Alertes récentes */}
         <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h2 className="text-lg font-bold text-coffee-dark">
@@ -297,55 +257,18 @@ export const Dashboard: React.FC = () => {
             </h2>
             <button
               onClick={() => navigate('/alertes')}
-              className="text-sm text-accent-primary hover:underline">
-              
+              className="text-sm text-accent-primary hover:underline"
+            >
               {t('dashboard.viewAll')}
             </button>
           </div>
           <div className="p-0 flex-1 overflow-y-auto">
-            {recentAlerts.length > 0 ?
-            <ul className="divide-y divide-gray-100">
-                {recentAlerts.map((alerte) =>
-              <li
-                key={alerte.idAlerte}
-                className="p-4 hover:bg-cream-bg transition-colors">
-                
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="font-medium text-sm text-coffee-dark">
-                        {alerte.nomEntrepot}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {new Date(alerte.dateAlerte).toLocaleDateString(
-                      'fr-FR'
-                    )}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <span
-                    className={`text-xs px-2 py-1 rounded-md ${alerte.type.includes('périmé') ? 'bg-status-danger/10 text-status-danger' : 'bg-status-warning/10 text-status-warning'}`}>
-                    
-                        {alerte.type}
-                      </span>
-                      <button
-                    onClick={() =>
-                    navigate(`/entrepot/${alerte.idEntrepot}`)
-                    }
-                    className="text-gray-400 hover:text-accent-primary">
-                    
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  </li>
-              )}
-              </ul> :
-
             <div className="p-6 text-center text-gray-500 text-sm">
-                {t('dashboard.noRecentAlerts')}
-              </div>
-            }
+              {t('dashboard.noRecentAlerts')}
+            </div>
           </div>
         </div>
       </div>
-    </div>);
-
+    </div>
+  );
 };
