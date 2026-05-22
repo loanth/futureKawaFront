@@ -264,8 +264,11 @@ export class MultiCountryApiService {
     if (filters?.type) params.append('type', filters.type);
     
     const queryString = params.toString();
-    const path = queryString ? `/alertes?${queryString}` : '/alertes';
-    
+    const path = queryString ? `/alertes?${queryString}` : '';
+      // 🔍 DEBUG
+  console.log('[getAllAlerts] pays actif:', this.currentCountry);
+  console.log('[getAllAlerts] path construit:', path);
+  console.log('[getAllAlerts] filters reçus:', filters);
     return this.fetchFromCurrentCountry('alertes', path);
   }
 

@@ -43,7 +43,7 @@ export const Dashboard: React.FC = () => {
       const multiCountryResponse = await multiCountryApiService.getAllCountriesDashboardSummary();
       setMultiCountryData(multiCountryResponse);
 
-      let totalMetrics = { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 };
+      const totalMetrics = { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 };
       let allSummaryByCountry: any[] = [];
 
       multiCountryResponse.countries.forEach((countryResult: any) => {
