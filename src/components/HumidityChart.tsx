@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -34,8 +35,10 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
   data,
   minThreshold,
   maxThreshold,
-  title = "Évolution de l'humidité (%)"
+  title 
 }) => {
+  const { t } = useTranslation();
+  const chartTitle = title || t('countries.humidity');
   // Trier les données par date croissante (plus ancien au plus récent)
   const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
@@ -48,7 +51,7 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
   });
   const datasets: any[] = [
   {
-    label: 'Humidité (%)',
+    label: t('countries.humidity'),
     data: sortedData.map((d) => d.value),
     borderColor: '#3b82f6',
     backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -61,7 +64,7 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
 
   if (minThreshold !== undefined) {
     datasets.push({
-      label: `Min (${minThreshold}%)`,
+      label: `${t('common.min')} (${minThreshold}%)`,
       data: sortedData.map(() => minThreshold),
       borderColor: '#ef4444',
       backgroundColor: 'transparent',
@@ -75,7 +78,7 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
   }
   if (maxThreshold !== undefined) {
     datasets.push({
-      label: `Max (${maxThreshold}%)`,
+      label: `${t('common.max')} (${maxThreshold }%)`,
       data: sortedData.map(() => maxThreshold),
       borderColor: '#ef4444',
       backgroundColor: 'transparent',
@@ -106,8 +109,8 @@ export const HumidityChart: React.FC<HumidityChartProps> = ({
         }
       },
       title: {
-        display: !!title,
-        text: title,
+        display: !!chartTitle,
+        text: chartTitle,
         color: '#2C1810',
         font: {
           family: "'DM Sans', sans-serif",

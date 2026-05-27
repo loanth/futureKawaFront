@@ -24,7 +24,9 @@
     "confirm": "Confirm",
     "yes": "Yes",
     "no": "No",
-    "settings": "Settings"
+    "settings": "Settings",
+    "min": "Min",
+    "max": "Max"
   },
   "navigation": {
     "title": "Navigation",

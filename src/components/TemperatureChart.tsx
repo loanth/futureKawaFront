@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -34,8 +35,10 @@ export const TemperatureChart: React.FC<TemperatureChartProps> = ({
   data,
   minThreshold,
   maxThreshold,
-  title = 'Évolution de la température (°C)'
+  title
 }) => {
+  const { t } = useTranslation();
+  const chartTitle = title || t('countries.temperature');
   // Trier les données par date croissante (plus ancien au plus récent)
   const sortedData = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   
@@ -48,7 +51,7 @@ export const TemperatureChart: React.FC<TemperatureChartProps> = ({
   });
   const datasets: any[] = [
   {
-    label: 'Température (°C)',
+    label: t('countries.temperature'),
     data: sortedData.map((d) => d.value),
     borderColor: '#f59e0b',
     backgroundColor: 'rgba(245, 158, 11, 0.1)',
@@ -61,7 +64,7 @@ export const TemperatureChart: React.FC<TemperatureChartProps> = ({
 
   if (minThreshold !== undefined) {
     datasets.push({
-      label: `Min (${minThreshold}°C)`,
+      label: `${t('common.min')} (${minThreshold}°C)`,
       data: sortedData.map(() => minThreshold),
       borderColor: '#ef4444',
       backgroundColor: 'transparent',
@@ -75,7 +78,7 @@ export const TemperatureChart: React.FC<TemperatureChartProps> = ({
   }
   if (maxThreshold !== undefined) {
     datasets.push({
-      label: `Max (${maxThreshold}°C)`,
+      label: `${t('common.max')} (${maxThreshold}°C)`,
       data: sortedData.map(() => maxThreshold),
       borderColor: '#ef4444',
       backgroundColor: 'transparent',
@@ -106,8 +109,8 @@ export const TemperatureChart: React.FC<TemperatureChartProps> = ({
         }
       },
       title: {
-        display: !!title,
-        text: title,
+        display: !!chartTitle,
+        text: chartTitle,
         color: '#2C1810',
         font: {
           family: "'DM Sans', sans-serif",
