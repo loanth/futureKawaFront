@@ -110,7 +110,8 @@
     "exploitationNotFound": "Exploitation non trouvée",
     "managedWarehouses": "entrepôts gérés",
     "fieldTeam": "Équipe Terrain",
-    "noUserAssigned": "Aucun utilisateur assigné"
+    "noUserAssigned": "Aucun utilisateur assigné",
+    "newExploitation": "Nouvelle exploitation"
   },
   "warehouses": {
     "title": "Entrepôts",
@@ -129,7 +130,8 @@
     "status": "Statut",
     "days": "jours",
     "noLotsStored": "Aucun lot actuellement stocké dans cet entrepôt.",
-    "addNewLot": "Ajouter un nouveau lot"
+    "addNewLot": "Ajouter un nouveau lot",
+    "newWarehouse": "Nouvel entrepôt"
   },
   "lots": {
     "title": "Lots",

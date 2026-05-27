@@ -93,7 +93,8 @@
     "exploitationNotFound": "Farm not found",
     "managedWarehouses": "managed warehouses",
     "fieldTeam": "Field Team",
-    "noUserAssigned": "No user assigned"
+    "noUserAssigned": "No user assigned",
+    "newExploitation": "New Farm"
   },
   "warehouses": {
     "title": "Warehouses",
@@ -112,7 +113,8 @@
     "status": "Status",
     "days": "days",
     "noLotsStored": "No lots currently stored in this warehouse.",
-    "addNewLot": "Add New Lot"
+    "addNewLot": "Add New Lot",
+    "newWarehouse": "New Warehouse"
   },
   "lots": {
     "title": "Lots",
