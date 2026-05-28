@@ -273,38 +273,52 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="divide-y divide-gray-100">
                 {recentAlerts.map((alert: any, index: number) => (
-                  <div
-                    key={index}
-                    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-status-warning/10 text-status-warning">
-                            {alert.type || 'Alerte'}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {alert.pays?.flag} {alert.pays?.name}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-700">
-                          {alert.message || alert.description || 'Alerte sans description'}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {alert.dateAlerte || alert.date
-                            ? new Date(alert.dateAlerte || alert.date).toLocaleString('fr-FR', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })
-                            : '-'}
-                        </p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />
-                    </div>
-                  </div>
-                ))}
+  <div
+    key={alert.idAlerte || index}
+    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+    onClick={() => {
+  multiCountryApiService.setCurrentCountry(alert.pays?.code);
+  navigate(`/entrepot/${alert.mesure?.idEntrepot}`);
+}}
+  >
+    <div className="flex items-start justify-between">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-status-warning/10 text-status-warning">
+            {t('alerts.alert')} #{alert.idAlerte}
+          </span>
+          <span className="text-xs text-gray-500">
+            {alert.pays?.flag} {alert.pays?.name}
+          </span>
+        </div>
+
+        {/* Température et humidité */}
+        <div className="flex gap-3 text-sm text-gray-700">
+          <span>🌡 {alert.mesure?.temperature}°C</span>
+          <span>💧 {alert.mesure?.humidite}%</span>
+        </div>
+
+        {/* Entrepôt */}
+        <p className="text-xs text-gray-500 mt-0.5">
+          {t('warehouses.warehouse')} #{alert.mesure?.idEntrepot}
+        </p>
+
+        {/* Date */}
+        <p className="text-xs text-gray-400 mt-1">
+          {alert.mesure?.datMesure
+            ? new Date(alert.mesure.datMesure).toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+            : '-'}
+        </p>
+      </div>
+      <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />
+    </div>
+  </div>
+))}
               </div>
             )}
           </div>

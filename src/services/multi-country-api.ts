@@ -66,6 +66,10 @@ export class MultiCountryApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const baseUrl = getCountryApiUrl(countryCode, endpointType);
+    console.log('🔍 baseUrl:', baseUrl);
+  console.log('🔍 countryCode:', countryCode);
+  console.log('🔍 endpointType:', endpointType);
+  console.log('🔍 path:', path);
     if (!baseUrl) {
       return {
         success: false,
@@ -204,50 +208,42 @@ export class MultiCountryApiService {
     return this.fetchFromCurrentCountry('dashboard', '/alertes/recentes');
   }
 
-  async getAllCountriesRecentAlerts() {
-    const allAlerts: any[] = [];
+async getAllCountriesRecentAlerts() {
+  const allAlerts: any[] = [];
 
-    console.log('Récupération des alertes récentes pour tous les pays...');
+  for (const country of COUNTRIES_CONFIG) {
+    try {
+      const [alertsResponse, paysResponse] = await Promise.all([
+        this.fetchFromCountry(country.code, 'alertes', '/recentes'),
+        this.fetchFromCountry(country.code, 'pays', `/${country.code}`)
+      ]);
 
-    for (const country of COUNTRIES_CONFIG) {
-      try {
-        console.log(`Tentative de récupération des alertes pour ${country.name}...`);
-        
-        // Temporairement changer de pays pour cet appel
-        const originalCountry = this.currentCountry;
-        this.setCurrentCountry(country.code);
-        
-        const response = await this.fetchFromCurrentCountry('dashboard', '/alertes/recentes');
-        
-        // Restaurer le pays original
-        this.setCurrentCountry(originalCountry);
+      const seuils = paysResponse.data ?? null;
 
-        if (response.success && response.data) {
-          console.log(`Succès pour ${country.name}: ${response.data.length || 0} alertes`);
-          // Ajouter les informations du pays à chaque alerte
-          const alertsWithCountry = (Array.isArray(response.data) ? response.data : []).map((alert: any) => ({
-            ...alert,
-            pays: country
-          }));
-          allAlerts.push(...alertsWithCountry);
-        } else {
-          console.log(`Erreur pour ${country.name}:`, response.error);
-        }
-      } catch (error) {
-        console.log(`Erreur de connexion pour ${country.name}:`, error);
+      if (alertsResponse.success && Array.isArray(alertsResponse.data)) {
+        const filtered = alertsResponse.data
+          .filter((a: any) => {
+            const m = a.mesure;
+            if (!m) return false;
+            if (!seuils) return m.temperature > 30 || m.temperature < 10 || m.humidite > 80 || m.humidite < 40;
+            return m.temperature > seuils.temperatureMax || m.temperature < seuils.temperatureMin
+                || m.humidite > seuils.humiditeMax || m.humidite < seuils.humiditeMin;
+          })
+          .map((alert: any) => ({ ...alert, pays: country, _seuils: seuils }));
+
+        allAlerts.push(...filtered);
       }
+    } catch (error) {
+      console.log(`Erreur pour ${country.name}:`, error);
     }
-
-    // Trier les alertes par date (plus récent en premier)
-    allAlerts.sort((a, b) => {
-      const dateA = a.dateAlerte || a.date || new Date(0);
-      const dateB = b.dateAlerte || b.date || new Date(0);
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
-
-    // Limiter aux 10 alertes les plus récentes
-    return allAlerts.slice(0, 10);
   }
+
+  allAlerts.sort((a, b) =>
+    new Date(b.mesure?.datMesure || 0).getTime() - new Date(a.mesure?.datMesure || 0).getTime()
+  );
+
+  return allAlerts.slice(0, 10);
+}
 
   // Pays
   async getCountry(id: string): Promise<ApiResponse<any>> {
