@@ -172,6 +172,8 @@
     "allCountries": "Tous les pays",
     "allTypes": "Tous les types",
     "viewWarehouse": "Voir l'entrepôt",
+    "tempOutOfRange": "Température hors plage",
+    "humidityOutOfRange": "Humidité hors plage",
     "noAlertsFound": "Aucune alerte trouvée pour ces critères."
   }
 }

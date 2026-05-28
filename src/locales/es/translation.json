@@ -155,6 +155,8 @@
     "allCountries": "Todos los Países",
     "allTypes": "Todos los Tipos",
     "viewWarehouse": "Ver Almacén",
+    "tempOutOfRange": "Temperatura fuera de rango",
+    "humidityOutOfRange": "Humedad fuera de rango",
     "noAlertsFound": "No se encontraron alertas para estos criterios."
   }
 }

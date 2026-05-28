@@ -155,6 +155,8 @@
     "allCountries": "All Countries",
     "allTypes": "All Types",
     "viewWarehouse": "View Warehouse",
+    "tempOutOfRange": "Temperature out of range",
+    "humidityOutOfRange": "Humidity out of range",
     "noAlertsFound": "No alerts found for these criteria."
   }
 }

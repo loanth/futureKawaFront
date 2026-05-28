@@ -204,6 +204,51 @@ export class MultiCountryApiService {
     return this.fetchFromCurrentCountry('dashboard', '/alertes/recentes');
   }
 
+  async getAllCountriesRecentAlerts() {
+    const allAlerts: any[] = [];
+
+    console.log('Récupération des alertes récentes pour tous les pays...');
+
+    for (const country of COUNTRIES_CONFIG) {
+      try {
+        console.log(`Tentative de récupération des alertes pour ${country.name}...`);
+        
+        // Temporairement changer de pays pour cet appel
+        const originalCountry = this.currentCountry;
+        this.setCurrentCountry(country.code);
+        
+        const response = await this.fetchFromCurrentCountry('dashboard', '/alertes/recentes');
+        
+        // Restaurer le pays original
+        this.setCurrentCountry(originalCountry);
+
+        if (response.success && response.data) {
+          console.log(`Succès pour ${country.name}: ${response.data.length || 0} alertes`);
+          // Ajouter les informations du pays à chaque alerte
+          const alertsWithCountry = (Array.isArray(response.data) ? response.data : []).map((alert: any) => ({
+            ...alert,
+            pays: country
+          }));
+          allAlerts.push(...alertsWithCountry);
+        } else {
+          console.log(`Erreur pour ${country.name}:`, response.error);
+        }
+      } catch (error) {
+        console.log(`Erreur de connexion pour ${country.name}:`, error);
+      }
+    }
+
+    // Trier les alertes par date (plus récent en premier)
+    allAlerts.sort((a, b) => {
+      const dateA = a.dateAlerte || a.date || new Date(0);
+      const dateB = b.dateAlerte || b.date || new Date(0);
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+
+    // Limiter aux 10 alertes les plus récentes
+    return allAlerts.slice(0, 10);
+  }
+
   // Pays
   async getCountry(id: string): Promise<ApiResponse<any>> {
     return this.fetchFromCurrentCountry('pays', `/${id}`);

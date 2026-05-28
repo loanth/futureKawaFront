@@ -186,8 +186,8 @@ export const Alerts: React.FC = () => {
           className="bg-cream-bg border border-gray-200 text-coffee-dark text-sm rounded-lg focus:ring-accent-primary focus:border-accent-primary block p-2.5"
         >
           <option value="">{t('alerts.allTypes')}</option>
-          <option value="temperature">Température hors plage</option>
-          <option value="humidite">Humidité hors plage</option>
+          <option value="temperature">{t('alerts.tempOutOfRange')}</option>
+          <option value="humidite">{t('alerts.humidityOutOfRange')}</option>
         </select>
       </div>
 
@@ -206,8 +206,8 @@ export const Alerts: React.FC = () => {
                   <th className="p-4 font-medium">{t('warehouses.title')}</th>
                   {isSupervisor && <th className="p-4 font-medium">{t('countries.title')}</th>}
                   <th className="p-4 font-medium">{t('alerts.alertType')}</th>
-                  <th className="p-4 font-medium">Température</th>
-                  <th className="p-4 font-medium">Humidité</th>
+                  <th className="p-4 font-medium">{t('countries.temperature')}</th>
+                  <th className="p-4 font-medium">{t('countries.humidity')}</th>
                   <th className="p-4 font-medium"></th>
                 </tr>
               </thead>
