@@ -22,7 +22,7 @@ export const COUNTRIES_CONFIG: CountryConfig[] = [
     code: '1',
     name: 'Brésil',
     flag: 'BR',
-    baseUrl: 'http://localhost:5000',
+    baseUrl: import.meta.env.VITE_API_URL,
     endpoints: {
       auth: '/api',
       pays: '/api/pays',
@@ -39,7 +39,7 @@ export const COUNTRIES_CONFIG: CountryConfig[] = [
     code: '2',
     name: 'Équateur',
     flag: 'EC',
-    baseUrl: 'https://api.futurekawa.com.ec',
+    baseUrl: import.meta.env.VITE_API_URL_EC,
     endpoints: {
       auth: '/api',
       pays: '/api/pays',
@@ -56,7 +56,7 @@ export const COUNTRIES_CONFIG: CountryConfig[] = [
     code: '3',
     name: 'Colombie',
     flag: 'CO',
-    baseUrl: 'https://api.futurekawa.com.co',
+    baseUrl: import.meta.env.VITE_API_URL_CO,
     endpoints: {
       auth: '/api',
       pays: '/api/pays',
