@@ -22,7 +22,7 @@ export const COUNTRIES_CONFIG: CountryConfig[] = [
     code: '1',
     name: 'Brésil',
     flag: 'BR',
-    baseUrl: import.meta.env.VITE_API_URL,
+    baseUrl: import.meta.env.VITE_API_URL_BR,
     endpoints: {
       auth: '/api',
       pays: '/api/pays',
