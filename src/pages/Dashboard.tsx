@@ -285,7 +285,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
           <span className="text-xs font-medium px-2 py-1 rounded-full bg-status-warning/10 text-status-warning">
-            {t('alerts.alert')} #{alert.idAlerte}
+            #{alert.idAlerte}
           </span>
           <span className="text-xs text-gray-500">
             {alert.pays?.flag} {alert.pays?.name}
@@ -300,7 +300,9 @@ export const Dashboard: React.FC = () => {
 
         {/* Entrepôt */}
         <p className="text-xs text-gray-500 mt-0.5">
-          {t('warehouses.warehouse')} #{alert.mesure?.idEntrepot}
+          {alert.entrepot?.nom
+  ? alert.entrepot.nom
+  : `${t('warehouse')} #${alert.mesure?.idEntrepot}`}
         </p>
 
         {/* Date */}

@@ -121,8 +121,8 @@ export const WarehouseView: React.FC = () => {
               path: `/pays/${pays.idPays}`
             },
             {
-              label: entrepot.exploitation?.nom || 'Exploitation',
-              path: entrepot.exploitation?.idExploitation ? `/exploitation/${entrepot.exploitation.idExploitation}` : '#'
+              label: entrepot.nomExploitation,
+  path: `/exploitation/${entrepot.idExploitation}`
             },
             {
               label: entrepot.nom || 'Entrepôt'
