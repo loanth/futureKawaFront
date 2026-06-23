@@ -230,7 +230,7 @@ export const Alerts: React.FC = () => {
                       </td>
                       <td className="p-4">
                         <div className="font-medium text-coffee-dark">
-                          Entrepôt #{alerte.mesure.idEntrepot}
+                          {alerte.entrepot?.nom}
                         </div>
                         <div className="text-xs text-gray-500">ID alerte : {alerte.idAlerte}</div>
                       </td>

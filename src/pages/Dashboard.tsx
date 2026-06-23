@@ -28,7 +28,6 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // ✅ Redirection si pas superviseur
   useEffect(() => {
     if (!isSupervisor) {
       const stored = localStorage.getItem('countryConfig');
@@ -50,7 +49,6 @@ export const Dashboard: React.FC = () => {
         if (countryResult.status === 'success' && countryResult.data) {
           if (countryResult.data.metrics) {
             totalMetrics.lotsStockes     += countryResult.data.metrics.lotsStockes     || 0;
-            totalMetrics.lotsAlerte      += countryResult.data.metrics.lotsAlerte      || 0;
             totalMetrics.lotsPerimes     += countryResult.data.metrics.lotsPerimes     || 0;
             totalMetrics.entrepotsActifs += countryResult.data.metrics.entrepotsActifs || 0;
           }
@@ -60,17 +58,29 @@ export const Dashboard: React.FC = () => {
         }
       });
 
-      setData({ metrics: totalMetrics, summaryByCountry: allSummaryByCountry });
-
-      // Récupérer les alertes récentes de tous les pays
       const alerts = await multiCountryApiService.getAllCountriesRecentAlerts();
       setRecentAlerts(alerts);
 
+      const alertesByPays = alerts.reduce((acc: any, alert: any) => {
+        const code = String(alert.pays?.code);
+        if (code) acc[code] = (acc[code] || 0) + 1;
+        return acc;
+      }, {});
+
+      const summaryWithAlerts = allSummaryByCountry.map((row: any) => ({
+        ...row,
+        lotsEnAlerte: alertesByPays[String(row.pays?.idPays)] ?? 0,
+      }));
+
+      setData({
+        metrics: { ...totalMetrics, lotsAlerte: alerts.length },
+        summaryByCountry: summaryWithAlerts,
+      });
     } catch (error) {
       console.error('Error fetching dashboard data', error);
       setData({
         metrics: { lotsStockes: 0, lotsAlerte: 0, lotsPerimes: 0, entrepotsActifs: 0 },
-        summaryByCountry: []
+        summaryByCountry: [],
       });
       setRecentAlerts([]);
     } finally {
@@ -116,7 +126,6 @@ export const Dashboard: React.FC = () => {
 
       <AlertBanner status={globalStatus} message={globalMessage} />
 
-      {/* Statut de connexion aux APIs */}
       {multiCountryData && (
         <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6">
           <h2 className="text-lg font-bold text-coffee-dark mb-4">
@@ -170,7 +179,6 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Métriques globales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title={t('dashboard.storedLots')}
@@ -199,7 +207,6 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Tableau par pays */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-bold text-coffee-dark">
@@ -221,7 +228,7 @@ export const Dashboard: React.FC = () => {
               <tbody className="text-sm">
                 {data?.summaryByCountry.map((row: any, index: number) => (
                   <tr
-                    key={row.pays?.id || index}
+                    key={row.pays?.idPays || index}
                     className="border-b border-gray-50 hover:bg-cream-bg cursor-pointer transition-colors"
                   >
                     <td className="p-4 font-medium text-coffee-dark">{row.pays.nom}</td>
@@ -241,7 +248,7 @@ export const Dashboard: React.FC = () => {
                             day: '2-digit',
                             month: '2-digit',
                             hour: '2-digit',
-                            minute: '2-digit'
+                            minute: '2-digit',
                           })
                         : '-'}
                     </td>
@@ -252,7 +259,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Alertes récentes */}
         <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 overflow-hidden flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h2 className="text-lg font-bold text-coffee-dark">
@@ -273,54 +279,46 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="divide-y divide-gray-100">
                 {recentAlerts.map((alert: any, index: number) => (
-  <div
-    key={alert.idAlerte || index}
-    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-    onClick={() => {
-  multiCountryApiService.setCurrentCountry(alert.pays?.code);
-  navigate(`/entrepot/${alert.mesure?.idEntrepot}`);
-}}
-  >
-    <div className="flex items-start justify-between">
-      <div className="flex-1">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-medium px-2 py-1 rounded-full bg-status-warning/10 text-status-warning">
-            #{alert.idAlerte}
-          </span>
-          <span className="text-xs text-gray-500">
-            {alert.pays?.flag} {alert.pays?.name}
-          </span>
-        </div>
-
-        {/* Température et humidité */}
-        <div className="flex gap-3 text-sm text-gray-700">
-          <span>🌡 {alert.mesure?.temperature}°C</span>
-          <span>💧 {alert.mesure?.humidite}%</span>
-        </div>
-
-        {/* Entrepôt */}
-        <p className="text-xs text-gray-500 mt-0.5">
-          {alert.entrepot?.nom
-  ? alert.entrepot.nom
-  : `${t('warehouse')} #${alert.mesure?.idEntrepot}`}
-        </p>
-
-        {/* Date */}
-        <p className="text-xs text-gray-400 mt-1">
-          {alert.mesure?.datMesure
-            ? new Date(alert.mesure.datMesure).toLocaleString('fr-FR', {
-                day: '2-digit',
-                month: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-              })
-            : '-'}
-        </p>
-      </div>
-      <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />
-    </div>
-  </div>
-))}
+                  <div
+                    key={alert.idAlerte || index}
+                    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => {
+                      multiCountryApiService.setCurrentCountry(alert.pays?.code);
+                      navigate(`/entrepot/${alert.mesure?.idEntrepot}`);
+                    }}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium px-2 py-1 rounded-full bg-status-warning/10 text-status-warning">
+                            #{alert.idAlerte}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {alert.pays?.flag} {alert.pays?.name}
+                          </span>
+                        </div>
+                        <div className="flex gap-3 text-sm text-gray-700">
+                          <span>🌡 {alert.mesure?.temperature}°C</span>
+                          <span>💧 {alert.mesure?.humidite}%</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {alert.entrepot?.nom ?? `${t('warehouse')} #${alert.mesure?.idEntrepot}`}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {alert.mesure?.datMesure
+                            ? new Date(alert.mesure.datMesure).toLocaleString('fr-FR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
+                            : '-'}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 mt-1" />
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
