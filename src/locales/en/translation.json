@@ -63,6 +63,7 @@
     "criticalAlert": "Critical Alert: {{count}} expired lot(s) detected. Immediate action required.",
     "warningAlert": "Warning: {{count}} lot(s) in storage condition alert.",
     "storedLots": "Stored Lots",
+    "apiStatus": "API connection status",
     "lotsInAlert": "Lots in Alert",
     "expiredLots": "Expired Lots",
     "activeWarehouses": "Active Warehouses",
@@ -75,6 +76,9 @@
   "countries": {
     "title": "Countries",
     "countryName": "Country Name",
+    "brazil": "Brazil",
+    "ecuador": "Ecuador",
+    "colombia": "Colombia",
     "code": "Code",
     "exploitationCount": "Farm Count",
     "warehouseCount": "Warehouse Count",

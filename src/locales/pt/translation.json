@@ -63,6 +63,7 @@
     "criticalAlert": "Alerta Crítico: {{count}} lote(s) expirado(s) detectado(s). Ação imediata necessária.",
     "warningAlert": "Aviso: {{count}} lote(s) em alerta de condição de armazenamento.",
     "storedLots": "Lotes Armazenados",
+    "apiStatus": "Estado de conexão da API",
     "lotsInAlert": "Lotes em Alerta",
     "expiredLots": "Lotes Expirados",
     "activeWarehouses": "Armazéns Ativos",
@@ -75,6 +76,9 @@
   "countries": {
     "title": "Países",
     "countryName": "Nome do País",
+    "brazil": "Brasil",
+    "ecuador": "Equador",
+    "colombia": "Colômbia",
     "code": "Código",
     "exploitationCount": "Quantidade de Fazendas",
     "warehouseCount": "Quantidade de Armazéns",

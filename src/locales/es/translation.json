@@ -63,6 +63,7 @@
     "criticalAlert": "Alerta Crítico: {{count}} lote(s) expirado(s) detectado(s). Se requiere acción inmediata.",
     "warningAlert": "Advertencia: {{count}} lote(s) en alerta de condición de almacenamiento.",
     "storedLots": "Lotes Almacenados",
+    "apiStatus": "Estado de conexión de la API",
     "lotsInAlert": "Lotes en Alerta",
     "expiredLots": "Lotes Expirados",
     "activeWarehouses": "Almacenes Activos",
@@ -75,6 +76,9 @@
   "countries": {
     "title": "Países",
     "countryName": "Nombre del País",
+    "brazil": "Brasil",
+    "ecuador": "Ecuador",
+    "colombia": "Colombia",
     "code": "Código",
     "exploitationCount": "Cantidad de Fincas",
     "warehouseCount": "Cantidad de Almacenes",

@@ -129,7 +129,7 @@ export const Dashboard: React.FC = () => {
       {multiCountryData && (
         <div className="bg-white rounded-xl shadow-card border border-coffee-light/10 p-6">
           <h2 className="text-lg font-bold text-coffee-dark mb-4">
-            Statut de connexion aux APIs
+            {t('dashboard.apiStatus')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {multiCountryData.countries.map((countryResult: any) => (

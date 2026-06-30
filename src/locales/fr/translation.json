@@ -80,6 +80,7 @@
     "criticalAlert": "Alerte Critique : {{count}} lot(s) périmé(s) détecté(s). Action immédiate requise.",
     "warningAlert": "Attention : {{count}} lot(s) en alerte de conditions de stockage.",
     "storedLots": "Lots Stockés",
+    "apiStatus": "État de connexion de l'API",
     "lotsInAlert": "Lots en Alerte",
     "expiredLots": "Lots Périmés",
     "activeWarehouses": "Entrepôts Actifs",
@@ -92,6 +93,9 @@
   "countries": {
     "title": "Pays",
     "countryName": "Nom du pays",
+    "brazil": "Brésil",
+    "ecuador": "Équateur",
+    "colombia": "Colombie",
     "code": "Code",
     "exploitationCount": "Nombre d'exploitations",
     "warehouseCount": "Nombre d'entrepôts",
