@@ -11,7 +11,7 @@ export default defineConfig({
     proxy: {
       // Proxy pour l'API locale (évite les problèmes CORS)
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://futurekawapp:5000',
         changeOrigin: true,
         secure: false,
         ws: true,
