@@ -81,7 +81,7 @@ export class MultiCountryApiService {
     let url: string;
     if (countryCode === '1') {
       // API locale via proxy Vite
-      const endpoint = baseUrl.replace('http://localhost:5000', '');
+      const endpoint = baseUrl.replace('import.meta.env.VITE_API_URL_BR', '');
       url = path ? `${endpoint}${path}` : endpoint;
     } else {
       // APIs distantes directes
