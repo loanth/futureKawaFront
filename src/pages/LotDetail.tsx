@@ -220,6 +220,15 @@ export const LotDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+    {!lot.datSortie && ageDays > 365 && (
+  <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
+    <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+    <p className="text-sm font-medium">
+      Ce lot est stocké depuis {ageDays} jours (plus d'un an) et est considéré comme périmé.
+    </p>
+  </div>
+)}
   {/* ================= CHARTS ================= */}
       <div className="grid grid-cols-2 gap-6">
         <TemperatureChart
