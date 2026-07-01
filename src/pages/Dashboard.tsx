@@ -173,7 +173,7 @@ export const Dashboard: React.FC = () => {
               <span className="font-medium">
                 {multiCountryData.successfulCountries} / {multiCountryData.totalCountries}
               </span>{' '}
-              pays connectés
+              {t('dashboard.ConnectedCountries')}
             </p>
           </div>
         </div>

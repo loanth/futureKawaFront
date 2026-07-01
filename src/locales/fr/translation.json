@@ -67,6 +67,7 @@
   },
   "dashboard": {
     "title": "Tableau de bord",
+    "ConnectedCountries": "Pays Connectés",
     "overview": "Vue d'ensemble",
     "statistics": "Statistiques",
     "recentAlerts": "Alertes récentes",
@@ -121,6 +122,7 @@
   },
   "warehouses": {
     "title": "Entrepôts",
+    "capacityFull": "Capacité Pleine",
     "warehouseName": "Nom de l'entrepôt",
     "exploitation": "Exploitation",
     "capacity": "Capacité",

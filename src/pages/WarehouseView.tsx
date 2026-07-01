@@ -51,8 +51,16 @@ export const WarehouseView: React.FC = () => {
     fetchData();
   }, [idEntrepot, period]);
 
+  const isWarehouseFull = !!entrepot && lots.length >= entrepot.limiteQte;
+
   const handleAddLot = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isWarehouseFull) {
+      setIsModalOpen(false);
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -138,9 +146,14 @@ export const WarehouseView: React.FC = () => {
           <p className="text-gray-500 mt-1">{entrepot.adresse}</p>
           <div className="mt-2 text-sm">
             <span className="text-gray-500">{t('warehouses.capacity')}: </span>
-            <span className="font-medium">
+            <span className={`font-medium ${isWarehouseFull ? 'text-status-danger' : ''}`}>
               {lots.length} / {entrepot.limiteQte} lots
             </span>
+            {isWarehouseFull && (
+              <span className="ml-2 text-status-danger text-xs">
+                ({t('warehouses.capacityFull')})
+              </span>
+            )}
           </div>
         </div>
 
@@ -215,7 +228,9 @@ export const WarehouseView: React.FC = () => {
           </h2>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center space-x-2 bg-accent-primary hover:bg-accent-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium">
+            disabled={isWarehouseFull}
+            title={isWarehouseFull ? t('warehouses.capacityFull') : undefined}
+            className="flex items-center space-x-2 bg-accent-primary hover:bg-accent-primary/90 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-accent-primary">
             
             <Plus size={16} />
             <span>{t('warehouses.newLot')}</span>
@@ -361,7 +376,7 @@ export const WarehouseView: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isWarehouseFull}
                     className="flex items-center px-4 py-2 text-sm font-medium text-white bg-accent-primary hover:bg-accent-primary/90 rounded-lg transition-colors disabled:opacity-70">
                   
                     {isSubmitting ? (

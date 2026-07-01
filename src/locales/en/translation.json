@@ -50,6 +50,7 @@
   },
   "dashboard": {
     "title": "Dashboard",
+    "ConnectedCountries": "Connected Countries",
     "overview": "Overview",
     "statistics": "Statistics",
     "recentAlerts": "Recent Alerts",
@@ -104,6 +105,7 @@
   },
   "warehouses": {
     "title": "Warehouses",
+    "capacityFull": "Capacity Full",
     "warehouseName": "Warehouse Name",
     "exploitation": "Farm",
     "capacity": "Capacity",

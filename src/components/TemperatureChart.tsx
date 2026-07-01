@@ -49,6 +49,16 @@ export const TemperatureChart: React.FC<TemperatureChartProps> = ({
       month: '2-digit'
     });
   });
+  const fullDates = sortedData.map((d) => {
+    const date = new Date(d.date);
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  });
   const datasets: any[] = [
   {
     label: t('countries.temperature'),
@@ -120,7 +130,13 @@ export const TemperatureChart: React.FC<TemperatureChartProps> = ({
       },
       tooltip: {
         mode: 'index' as const,
-        intersect: false
+        intersect: false,
+        callbacks: {
+          title: (items: any[]) => {
+            if (!items.length) return '';
+            return fullDates[items[0].dataIndex];
+          }
+        }
       }
     },
     scales: {

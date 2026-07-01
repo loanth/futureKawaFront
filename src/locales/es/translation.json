@@ -50,6 +50,7 @@
   },
   "dashboard": {
     "title": "Panel",
+    "ConnectedCountries": "Países Conectados",
     "overview": "Visión General",
     "statistics": "Estadísticas",
     "recentAlerts": "Alertas Recientes",
@@ -104,6 +105,7 @@
   },
   "warehouses": {
     "title": "Almacenes",
+    "capacityFull": "Capacidad Llena",
     "warehouseName": "Nombre del Almacén",
     "exploitation": "Finca",
     "capacity": "Capacidad",
