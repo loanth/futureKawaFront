@@ -28,28 +28,50 @@ export const WarehouseView: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    multiCountryApiService.initFromStorage();
-    
-    if (!idEntrepot) return;
-    const fetchData = async () => {
+  multiCountryApiService.initFromStorage();
+
+  if (!idEntrepot) return;
+
+  let isCancelled = false;
+
+  const fetchData = async (isBackgroundRefresh = false) => {
+    // On n'affiche le loader plein écran que lors du chargement initial,
+    // pas lors des rafraîchissements automatiques en arrière-plan
+    if (!isBackgroundRefresh) {
       setLoading(true);
-      try {
-        const [entData, mesData, lotsData] = await Promise.all([
-          multiCountryApiService.getEntrepot(idEntrepot),
-          multiCountryApiService.getEntrepotMeasures(idEntrepot, period),
-          multiCountryApiService.getEntrepotLots(idEntrepot)
-        ]);
-        setEntrepot(entData.data);
-        setMesures(mesData.data || []);
-        setLots(lotsData.data || []);
-      } catch (error) {
-        console.error('Error fetching warehouse data', error);
-      } finally {
+    }
+    try {
+      const [entData, mesData, lotsData] = await Promise.all([
+        multiCountryApiService.getEntrepot(idEntrepot),
+        multiCountryApiService.getEntrepotMeasures(idEntrepot, period),
+        multiCountryApiService.getEntrepotLots(idEntrepot)
+      ]);
+      if (isCancelled) return;
+      setEntrepot(entData.data);
+      setMesures(mesData.data || []);
+      setLots(lotsData.data || []);
+    } catch (error) {
+      console.error('Error fetching warehouse data', error);
+    } finally {
+      if (!isBackgroundRefresh && !isCancelled) {
         setLoading(false);
       }
-    };
-    fetchData();
-  }, [idEntrepot, period]);
+    }
+  };
+
+  // Chargement initial (avec loader)
+  fetchData(false);
+
+  // Rafraîchissement automatique toutes les 60 secondes (sans loader)
+  const intervalId = setInterval(() => {
+    fetchData(true);
+  }, 60000);
+
+  return () => {
+    isCancelled = true;
+    clearInterval(intervalId);
+  };
+}, [idEntrepot, period]);
 
   const isWarehouseFull = !!entrepot && lots.length >= entrepot.limiteQte;
 

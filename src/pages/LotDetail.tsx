@@ -26,91 +26,111 @@ export const LotDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isMarkingOut, setIsMarkingOut] = useState(false);
 
-  useEffect(() => {
-    multiCountryApiService.initFromStorage();
+useEffect(() => {
+  multiCountryApiService.initFromStorage();
 
-    if (!idLotGrains) return;
+  if (!idLotGrains) return;
 
-    const fetchData = async () => {
-      try {
-        const lotData = await multiCountryApiService.getLot(idLotGrains);
+  let isCancelled = false;
 
-        if (!lotData.data) return;
+  const fetchData = async (isBackgroundRefresh = false) => {
+    if (!isBackgroundRefresh) {
+      setLoading(true);
+    }
+    try {
+      const lotData = await multiCountryApiService.getLot(idLotGrains);
 
-        const startDate = lotData.data.datSto;
-        const endDate = lotData.data.datSortie || new Date().toISOString();
+      if (!lotData.data) return;
 
-        const [mesData, alertesData] = await Promise.all([
-          multiCountryApiService.getEntrepotMeasures(lotData.data.idEntrepot, 30),
-          multiCountryApiService.getLotAlerts(idLotGrains)
-        ]);
+      const startDate = lotData.data.datSto;
+      const endDate = lotData.data.datSortie || new Date().toISOString();
 
-        const filteredMesures = (mesData.data || []).filter((m: any) => {
-          const d = new Date(m.datMesure);
-          return d >= new Date(startDate) && d <= new Date(endDate);
-        });
+      const [mesData, alertesData] = await Promise.all([
+        multiCountryApiService.getEntrepotMeasures(lotData.data.idEntrepot, 30),
+        multiCountryApiService.getLotAlerts(idLotGrains)
+      ]);
 
-        // =========================
-        // 🔥 ALERTES MAPPING CLEAN
-        // =========================
-        const pays = lotData.data.pays;
+      if (isCancelled) return;
 
-        const mappedAlertes = (alertesData.data || []).map((a: any) => {
-          const mesure = a.mesure;
+      const filteredMesures = (mesData.data || []).filter((m: any) => {
+        const d = new Date(m.datMesure);
+        return d >= new Date(startDate) && d <= new Date(endDate);
+      });
 
-          if (!mesure) {
-            return {
-              idAlerte: a.idAlerte,
-              dateAlerte: null,
-              type: 'Inconnue',
-              valeurMesuree: null,
-              statut: 'UNKNOWN'
-            };
-          }
+      // =========================
+      // 🔥 ALERTES MAPPING CLEAN
+      // =========================
+      const pays = lotData.data.pays;
 
-          const temp = mesure.temperature;
-          const hum = mesure.humidite;
+      const mappedAlertes = (alertesData.data || []).map((a: any) => {
+        const mesure = a.mesure;
 
-          const isTempAlert =
-            temp != null &&
-            (temp < pays.temperatureMin || temp > pays.temperatureMax);
-
-          const isHumAlert =
-            hum != null &&
-            (hum < pays.humiditeMin || hum > pays.humiditeMax);
-
-          let type = 'Alerte inconnue';
-          let valeurMesuree = null;
-
-          if (isTempAlert) {
-            type = 'Température';
-            valeurMesuree = temp;
-          } else if (isHumAlert) {
-            type = 'Humidité';
-            valeurMesuree = hum;
-          }
-
+        if (!mesure) {
           return {
             idAlerte: a.idAlerte,
-            dateAlerte: mesure.datMesure,
-            type,
-            valeurMesuree,
-            statut: 'ACTIVE'
+            dateAlerte: null,
+            type: 'Inconnue',
+            valeurMesuree: null,
+            statut: 'UNKNOWN'
           };
-        });
+        }
 
-        setLot(lotData.data);
-        setMesures(filteredMesures);
-        setAlertes(mappedAlertes);
-      } catch (err) {
-        console.error(err);
-      } finally {
+        const temp = mesure.temperature;
+        const hum = mesure.humidite;
+
+        const isTempAlert =
+          temp != null &&
+          (temp < pays.temperatureMin || temp > pays.temperatureMax);
+
+        const isHumAlert =
+          hum != null &&
+          (hum < pays.humiditeMin || hum > pays.humiditeMax);
+
+        let type = 'Alerte inconnue';
+        let valeurMesuree = null;
+
+        if (isTempAlert) {
+          type = 'Température';
+          valeurMesuree = temp;
+        } else if (isHumAlert) {
+          type = 'Humidité';
+          valeurMesuree = hum;
+        }
+
+        return {
+          idAlerte: a.idAlerte,
+          dateAlerte: mesure.datMesure,
+          type,
+          valeurMesuree,
+          statut: 'ACTIVE'
+        };
+      });
+
+      setLot(lotData.data);
+      setMesures(filteredMesures);
+      setAlertes(mappedAlertes);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (!isBackgroundRefresh && !isCancelled) {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    fetchData();
-  }, [idLotGrains]);
+  // Chargement initial (avec loader)
+  fetchData(false);
+
+  // Rafraîchissement automatique toutes les 60 secondes (sans loader)
+  const intervalId = setInterval(() => {
+    fetchData(true);
+  }, 60000);
+
+  return () => {
+    isCancelled = true;
+    clearInterval(intervalId);
+  };
+}, [idLotGrains]);
 
   const handleMarkOut = async () => {
     setIsMarkingOut(true);
