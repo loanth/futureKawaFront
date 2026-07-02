@@ -73,7 +73,8 @@ export const WarehouseView: React.FC = () => {
   };
 }, [idEntrepot, period]);
 
-  const isWarehouseFull = !!entrepot && lots.length >= entrepot.limiteQte;
+  const activeLots = lots.filter((lot: any) => !lot.datSortie);
+const isWarehouseFull = !!entrepot && activeLots.length >= entrepot.limiteQte;
 
   const handleAddLot = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,7 +170,7 @@ export const WarehouseView: React.FC = () => {
           <div className="mt-2 text-sm">
             <span className="text-gray-500">{t('warehouses.capacity')}: </span>
             <span className={`font-medium ${isWarehouseFull ? 'text-status-danger' : ''}`}>
-              {lots.length} / {entrepot.limiteQte} lots
+              {activeLots.length} / {entrepot.limiteQte} lots
             </span>
             {isWarehouseFull && (
               <span className="ml-2 text-status-danger text-xs">
