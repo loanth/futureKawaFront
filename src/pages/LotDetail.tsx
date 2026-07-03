@@ -89,12 +89,15 @@ useEffect(() => {
         let type = 'Alerte inconnue';
         let valeurMesuree = null;
 
-        if (isTempAlert) {
-          type = 'Température';
-          valeurMesuree = temp;
+        if (isTempAlert && isHumAlert) {
+          type = 'Température et Humidité';
+          valeurMesuree = temp + '°C / ' + hum + '%';
         } else if (isHumAlert) {
           type = 'Humidité';
-          valeurMesuree = hum;
+          valeurMesuree = hum + '%';
+        }else if (isTempAlert) {
+          type = 'Température';
+          valeurMesuree = temp + '°C';
         }
 
         return {
