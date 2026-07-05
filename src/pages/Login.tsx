@@ -34,6 +34,7 @@ export const Login: React.FC = () => {
         config => config.name === selectedCountry
       );
 console.log('Selected Country Config:', countryConfig);
+console.log('Test pipeline');
       if (!countryConfig) {
         setError('Pays introuvable');
         return;
