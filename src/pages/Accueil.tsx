@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, AlertTriangle, Building2, Thermometer, Droplets } from 'lucide-react';
+import { Package, AlertTriangle, Building2, Thermometer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 

@@ -33,7 +33,7 @@ export const Login: React.FC = () => {
       const countryConfig = COUNTRIES_CONFIG.find(
         config => config.name === selectedCountry
       );
-console.log('Selected Country Config:', countryConfig);
+
 
       if (!countryConfig) {
         setError('Pays introuvable');

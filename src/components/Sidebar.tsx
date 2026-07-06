@@ -104,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           label: `${country.flag} ${country.name}`,
           icon: MapPin,
           countryCode: country.code,
-          onClick: (e: React.MouseEvent) => handleCountryClick(country.code),
+          onClick: () => handleCountryClick(country.code),
         }))
       : currentCountryConfig
       ? [

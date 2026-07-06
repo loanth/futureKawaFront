@@ -3,9 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Loader2,
   Package,
-  Calendar,
-  AlertTriangle,
-  CheckCircle
+  AlertTriangle
 } from 'lucide-react';
 import { multiCountryApiService } from '../services/multi-country-api';
 import { Breadcrumb } from '../components/Breadcrumb';
@@ -79,11 +77,11 @@ useEffect(() => {
         const hum = mesure.humidite;
 
         const isTempAlert =
-          temp != null &&
+          temp !== null &&
           (temp < pays.temperatureMin || temp > pays.temperatureMax);
 
         const isHumAlert =
-          hum != null &&
+          hum !== null &&
           (hum < pays.humiditeMin || hum > pays.humiditeMax);
 
         let type = 'Alerte inconnue';
