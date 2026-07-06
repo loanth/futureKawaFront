@@ -34,7 +34,8 @@ export const AuthProvider = ({ children }: {children: ReactNode;}) => {
         if (storedCountry) {
           setSelectedCountryState(storedCountry);
         }
-      } catch (e) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (error) {
         console.error('Failed to parse user data');
       }
     }

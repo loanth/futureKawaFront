@@ -20,16 +20,7 @@ export const CountryTabs: React.FC = () => {
     }
   }, []);
 
-  // Fonction pour changer de pays
-  const handleCountryChange = (countryName: string) => {
-    const country = COUNTRIES_CONFIG.find(c => c.name === countryName);
-    if (country) {
-      setSelectedCountry(countryName);
-      setCountryConfig(country);
-      multiCountryApiService.setCurrentCountry(country.code);
-      localStorage.setItem('countryConfig', JSON.stringify(country));
-    }
-  };
+  
 
   if (!countryConfig) {
     return <div>Chargement...</div>;

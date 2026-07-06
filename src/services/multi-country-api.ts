@@ -24,10 +24,8 @@ export class MultiCountryApiService {
       this.currentCountry = countryCode;
       // Stocker dans localStorage pour persistance
       localStorage.setItem('selectedCountry', countryCode);
-      console.log(`Pays changé vers: ${country.name} (${countryCode})`);
-    } else {
-      console.error(`Pays non trouvé: ${countryCode}`);
-    }
+
+    } 
   }
 
   // Obtenir le pays actif
@@ -45,17 +43,15 @@ export class MultiCountryApiService {
     // Nettoyer les anciennes valeurs incorrectes
     const savedCountry = localStorage.getItem('selectedCountry');
     if (savedCountry === 'BR') {
-      console.log('Nettoyage de l\'ancienne valeur "BR" du localStorage');
+
       localStorage.removeItem('selectedCountry');
     }
     
     const cleanSavedCountry = localStorage.getItem('selectedCountry');
     if (cleanSavedCountry) {
       this.currentCountry = cleanSavedCountry;
-      console.log(`Pays initialisé depuis localStorage: ${cleanSavedCountry}`);
-    } else {
-      console.log('Aucun pays sauvegardé, utilisation du pays par défaut');
-    }
+      
+    } 
   }
 
   // Fonction générique pour faire des appels HTTP
@@ -66,10 +62,7 @@ export class MultiCountryApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     const baseUrl = getCountryApiUrl(countryCode, endpointType);
-    console.log('🔍 baseUrl:', baseUrl);
-  console.log('🔍 countryCode:', countryCode);
-  console.log('🔍 endpointType:', endpointType);
-  console.log('🔍 path:', path);
+
     if (!baseUrl) {
       return {
         success: false,
@@ -88,7 +81,7 @@ export class MultiCountryApiService {
       url = path ? `${baseUrl}${path}` : baseUrl;
     }
     
-    console.log(`Appel API: ${options.method || 'GET'} ${url}`);
+
     
     try {
       const response = await fetch(url, {
@@ -149,11 +142,11 @@ export class MultiCountryApiService {
     let successfulCount = 0;
     let failedCount = 0;
 
-    console.log('Récupération des données dashboard pour tous les pays...');
+  
 
     for (const country of COUNTRIES_CONFIG) {
       try {
-        console.log(`Tentative de connexion à ${country.name} (${country.baseUrl})...`);
+       
         
         // Temporairement changer de pays pour cet appel
         const originalCountry = this.currentCountry;
@@ -165,7 +158,7 @@ export class MultiCountryApiService {
         this.setCurrentCountry(originalCountry);
 
         if (response.success) {
-          console.log(`Succès pour ${country.name}`);
+          
           successfulCount++;
           results.push({
             country,
@@ -173,7 +166,7 @@ export class MultiCountryApiService {
             status: 'success' as const
           });
         } else {
-          console.log(`Erreur pour ${country.name}:`, response.error);
+   
           failedCount++;
           results.push({
             country,
@@ -183,7 +176,7 @@ export class MultiCountryApiService {
           });
         }
       } catch (error) {
-        console.log(`Erreur de connexion pour ${country.name}:`, error);
+       
         failedCount++;
         results.push({
           country,
@@ -194,7 +187,7 @@ export class MultiCountryApiService {
       }
     }
 
-    console.log(`Résultat: ${successfulCount} succès, ${failedCount} échecs sur ${COUNTRIES_CONFIG.length} pays`);
+    
 
     return {
       countries: results,
@@ -233,8 +226,9 @@ async getAllCountriesRecentAlerts() {
 
         allAlerts.push(...filtered);
       }
-    } catch (error) {
-      console.log(`Erreur pour ${country.name}:`, error);
+    }   catch (error) {
+      console.error(`Erreur de connexion pour ${country.name}:`, error);
+    
     }
   }
 
@@ -276,7 +270,7 @@ async getAllCountriesRecentAlerts() {
     return this.fetchFromCurrentCountry('entrepot', `/${id}`);
   }
 
-  async getEntrepotMeasures(idEntrepot: string, days: number = 30): Promise<ApiResponse<any>> {
+  async getEntrepotMeasures(idEntrepot: string, _days: number = 30): Promise<ApiResponse<any>> {
     return this.fetchFromCurrentCountry('mesures', `/entrepot/${idEntrepot}`);
   }
 
@@ -306,10 +300,7 @@ async getAllCountriesRecentAlerts() {
     
     const queryString = params.toString();
     const path = queryString ? `/alertes?${queryString}` : '';
-      // 🔍 DEBUG
-  console.log('[getAllAlerts] pays actif:', this.currentCountry);
-  console.log('[getAllAlerts] path construit:', path);
-  console.log('[getAllAlerts] filters reçus:', filters);
+
     return this.fetchFromCurrentCountry('alertes', path);
   }
 
@@ -372,12 +363,11 @@ async getAllCountriesRecentAlerts() {
   }
 
   async updateLot(id: string, data: { datSortie?: string; statut?: string; }): Promise<ApiResponse<any>> {
-    console.log(`updateLot appelé avec id=${id}, data=`, data);
     const result = await this.fetchFromCurrentCountry('lot', `/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data)
     });
-    console.log(`updateLot réponse:`, result);
+
     return result;
   }
 

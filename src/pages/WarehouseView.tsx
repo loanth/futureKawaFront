@@ -20,7 +20,7 @@ export const WarehouseView: React.FC = () => {
   const [mesures, setMesures] = useState<any[]>([]);
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<number>(30);
+  const [period] = useState<number>(30);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newLotDate, setNewLotDate] = useState(
     new Date().toISOString().split('T')[0]
@@ -276,7 +276,7 @@ const isWarehouseFull = !!entrepot && activeLots.length >= entrepot.limiteQte;
                   (new Date().getTime() - new Date(lot.datSto).getTime()) / (
                     1000 * 60 * 60 * 24)
                   );
-                console.log('Lot data:', lot);
+    
                 return (
                   <tr
                     key={lot.idLotGrains}
