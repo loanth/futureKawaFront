@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams} from 'react-router-dom';
 import {
   Loader2,
   Package,
@@ -16,7 +16,6 @@ import { useTranslation } from 'react-i18next';
 export const LotDetail: React.FC = () => {
   const { t } = useTranslation();
   const { idLotGrains } = useParams<{ idLotGrains: string }>();
-  const navigate = useNavigate();
 
   const [lot, setLot] = useState<any>(null);
   const [mesures, setMesures] = useState<any[]>([]);
