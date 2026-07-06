@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { multiCountryApiService } from '../services/multi-country-api';
 import { COUNTRIES_CONFIG } from '../config/country-config';
 
+
 export const CountryTabs: React.FC = () => {
-  const [selectedCountry, setSelectedCountry] = useState<string>('');
+  const [, setSelectedCountry] = useState<string>('');
   const [countryConfig, setCountryConfig] = useState<any>(null);
 
   useEffect(() => {
